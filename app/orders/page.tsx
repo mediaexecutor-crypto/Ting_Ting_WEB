@@ -1,11 +1,31 @@
 import Link from 'next/link';
 import OrderTable from '@/components/OrderTable';
 import { getOrders } from '@/lib/orders';
+import { ORDER_STATUSES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Orders() {
-  const orders = await getOrders();
+type Props = {
+  searchParams: Promise<{ q?: string; status?: string }>;
+};
+
+export default async function Orders({ searchParams }: Props) {
+  const { q = '', status = '' } = await searchParams;
+  const allOrders = await getOrders();
+
+  const needle = q.trim().toLowerCase();
+  const orders = allOrders.filter((o) => {
+    const matchesQuery =
+      needle === '' ||
+      o.invoice.toLowerCase().includes(needle) ||
+      o.customer.toLowerCase().includes(needle) ||
+      o.phone.toLowerCase().includes(needle) ||
+      o.address.toLowerCase().includes(needle);
+
+    const matchesStatus = status === '' || o.status === status;
+
+    return matchesQuery && matchesStatus;
+  });
 
   return (
     <>
@@ -21,7 +41,8 @@ export default async function Orders() {
       </div>
 
       <section className="panel">
-        <div
+        <form
+          method="get"
           style={{
             display: 'flex',
             gap: 10,
@@ -29,6 +50,8 @@ export default async function Orders() {
           }}
         >
           <input
+            name="q"
+            defaultValue={q}
             placeholder="Search invoice, name, phone, address..."
             style={{
               flex: 1,
@@ -39,23 +62,38 @@ export default async function Orders() {
           />
 
           <select
+            name="status"
+            defaultValue={status}
             style={{
               border: '1px solid #d8dde5',
               borderRadius: 9,
               padding: 11,
             }}
           >
-            <option>All Status</option>
-            <option>NEW</option>
-            <option>CONFIRMED</option>
-            <option>PRODUCTION</option>
-            <option>READY</option>
-            <option>DELIVERY</option>
-            <option>DELIVERED</option>
+            <option value="">All Status</option>
+            {ORDER_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
-        </div>
+
+          <button className="btn" type="submit">
+            Search
+          </button>
+          {(q || status) && (
+            <Link className="btn secondary" href="/orders">
+              Clear
+            </Link>
+          )}
+        </form>
 
         <OrderTable orders={orders} />
+        {orders.length === 0 && (
+          <div className="muted" style={{ padding: 20, textAlign: 'center' }}>
+            No orders match your search.
+          </div>
+        )}
       </section>
     </>
   );
