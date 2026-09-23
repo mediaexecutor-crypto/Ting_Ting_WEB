@@ -1,16 +1,8 @@
+```ts
 import { supabase } from './supabase';
 import { Order, OrderStatus } from './types';
 
 export async function getOrders(): Promise<Order[]> {
-console.log('SUPABASE URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log('SUPABASE KEY EXISTS:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
-  console.log(
-  'SUPABASE HOST:',
-  new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname
-);
-  throw new Error('ORDERS_FUNCTION_REACHED');
-  
   const { data, error } = await supabase
     .from('orders')
     .select(`
@@ -43,3 +35,4 @@ console.log('SUPABASE KEY EXISTS:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
     status: order.status as OrderStatus,
   }));
 }
+```
