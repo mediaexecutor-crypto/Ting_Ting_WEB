@@ -14,7 +14,8 @@ export async function getOrders(): Promise<Order[]> {
       status,
       customers (
         name,
-        phone
+        phone,
+        address
       )
     `)
     .order('created_at', { ascending: false });
@@ -29,11 +30,21 @@ export async function getOrders(): Promise<Order[]> {
     invoice: order.invoice,
     customer: order.customers?.name ?? '',
     phone: order.customers?.phone ?? '',
+    address: order.customers?.address ?? '',
     delivery: order.delivery_date,
     amount: Number(order.total_amount ?? 0),
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
   }));
+}
+
+// Orders still awaiting delivery (excludes DELIVERED / CANCELLED),
+// soonest delivery date first.
+export async function getPendingDeliveries(): Promise<Order[]> {
+  const orders = await getOrders();
+  return orders
+    .filter((o) => o.status !== 'DELIVERED' && o.status !== 'CANCELLED')
+    .sort((a, b) => (a.delivery || '9999').localeCompare(b.delivery || '9999'));
 }
 
 export async function createOrder(payload: NewOrderPayload) {

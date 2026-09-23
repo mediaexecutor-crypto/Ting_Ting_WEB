@@ -26,6 +26,7 @@ export type Order = {
   invoice: string;
   customer: string;
   phone: string;
+  address: string;
   delivery: string;
   amount: number;
   due: number;
