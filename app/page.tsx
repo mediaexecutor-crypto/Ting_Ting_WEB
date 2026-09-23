@@ -1,6 +1,60 @@
 import Link from 'next/link';
-import {orders} from '@/lib/mock';
-import {isOverdue} from '@/lib/date';
 import OrderTable from '@/components/OrderTable';
-const statuses=['NEW','CONFIRMED','DESIGN','PRODUCTION','READY','DELIVERY','DELIVERED','ON_HOLD'];
-export default function Dashboard(){const overdue=orders.filter(o=>isOverdue(o.delivery,o.status)).length;const today=orders.filter(o=>o.delivery==='2026-09-23'&&o.status!=='DELIVERED').length;return <><div className="top"><div><div className="title">Dashboard</div><div className="muted">CODS Order Management System</div></div><Link className="btn" href="/orders/new">+ New Order</Link></div><div className="cards">{[['TODAY',today],['NEXT 3 DAYS',orders.length],['NEXT 7 DAYS',orders.length],['NEXT 15 DAYS',orders.length],['15+ DAYS',0],['OVERDUE',overdue]].map(([k,v])=><div className="card" key={k}><div className="muted">{k}</div><div className="n">{v}</div></div>)}</div><div className="grid2"><section className="panel"><h3>Order Pipeline</h3><div className="pipeline">{statuses.map(s=><div className="pill" key={s}>{s}<b>{orders.filter(o=>o.status===s).length}</b></div>)}</div></section><section className="panel"><h3>Attention Required</h3><p>🔴 {overdue} overdue order{overdue!==1?'s':''}</p><p>💰 {orders.filter(o=>o.due>0).length} order{orders.filter(o=>o.due>0).length!==1?'s':''} have due payment</p><p>🚚 {today} delivery due today</p></section></div><section className="panel" style={{marginTop:18}}><div className="top" style={{marginBottom:5}}><h3>Recent Orders</h3><Link className="btn secondary" href="/orders">View all</Link></div><OrderTable/></section></>}
+import { getOrders } from '@/lib/orders';
+
+export default async function Orders() {
+  const orders = await getOrders();
+
+  return (
+    <>
+      <div className="top">
+        <div>
+          <div className="title">Orders</div>
+          <div className="muted">Search and manage all orders</div>
+        </div>
+
+        <Link className="btn" href="/orders/new">
+          + New Order
+        </Link>
+      </div>
+
+      <section className="panel">
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            marginBottom: 15,
+          }}
+        >
+          <input
+            placeholder="Search invoice, name, phone, address..."
+            style={{
+              flex: 1,
+              border: '1px solid #d8dde5',
+              borderRadius: 9,
+              padding: 11,
+            }}
+          />
+
+          <select
+            style={{
+              border: '1px solid #d8dde5',
+              borderRadius: 9,
+              padding: 11,
+            }}
+          >
+            <option>All Status</option>
+            <option>NEW</option>
+            <option>CONFIRMED</option>
+            <option>PRODUCTION</option>
+            <option>READY</option>
+            <option>DELIVERY</option>
+            <option>DELIVERED</option>
+          </select>
+        </div>
+
+        <OrderTable orders={orders} />
+      </section>
+    </>
+  );
+}
