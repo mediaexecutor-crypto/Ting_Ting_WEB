@@ -2,10 +2,10 @@ import { Order } from '@/lib/types';
 import { isOverdue } from '@/lib/date';
 
 type OrderTableProps = {
-  orders: Order[];
+  orders?: Order[];
 };
 
-export default function OrderTable({ orders }: OrderTableProps) {
+export default function OrderTable({ orders = [] }: OrderTableProps) {
   return (
     <table className="table">
       <thead>
