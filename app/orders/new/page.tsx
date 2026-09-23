@@ -1,2 +1,230 @@
-'use client';import {useState} from 'react';
-export default function NewOrder(){const [items,setItems]=useState([{product:'',qty:1,price:0}]);return <><div className="top"><div><div className="title">Create Order</div><div className="muted">Create a new customer order</div></div></div><section className="panel"><h3>Customer</h3><div className="formgrid"><div className="field"><label>Customer Name *</label><input/></div><div className="field"><label>Phone *</label><input/></div><div className="field full"><label>Address *</label><textarea rows={2}/></div></div><h3 style={{marginTop:25}}>Order Information</h3><div className="formgrid"><div className="field"><label>Invoice Number *</label><input placeholder="INV-260923-001"/></div><div className="field"><label>Expected Delivery *</label><input type="date"/></div><div className="field"><label>Order Source</label><select><option>Facebook</option><option>WhatsApp</option><option>Call</option><option>Walk-in</option><option>Reference</option><option>Other</option></select></div><div className="field"><label>Priority</label><select><option>Normal</option><option>Urgent</option><option>Emergency</option></select></div></div><h3 style={{marginTop:25}}>Products</h3>{items.map((x,i)=><div key={i} style={{display:'grid',gridTemplateColumns:'1fr 120px 150px 40px',gap:8,marginBottom:8}}><input placeholder="Product"/><input type="number" placeholder="Qty"/><input type="number" placeholder="Unit Price"/><button className="btn secondary" onClick={()=>setItems(items.filter((_,j)=>j!==i))}>×</button></div>)}<button className="btn secondary" onClick={()=>setItems([...items,{product:'',qty:1,price:0}])}>+ Add Product</button><h3 style={{marginTop:25}}>Payment</h3><div className="formgrid"><div className="field"><label>Advance</label><input type="number"/></div><div className="field"><label>COD / Due</label><input type="number"/></div><div className="field full"><label>Notes</label><textarea rows={3}/></div></div><div className="actions"><button className="btn secondary">Cancel</button><button className="btn">Create Order</button></div></section></>}
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { NewOrderItem } from '@/lib/types';
+
+export default function NewOrder() {
+  const router = useRouter();
+
+  const [customerName, setCustomerName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [invoice, setInvoice] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [source, setSource] = useState('Facebook');
+  const [priority, setPriority] = useState('Normal');
+  const [items, setItems] = useState<NewOrderItem[]>([
+    { product: '', qty: 1, price: 0 },
+  ]);
+  const [advance, setAdvance] = useState(0);
+  const [due, setDue] = useState(0);
+  const [notes, setNotes] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  function updateItem(index: number, patch: Partial<NewOrderItem>) {
+    setItems(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }
+
+  async function handleSubmit() {
+    setError('');
+
+    if (!customerName.trim() || !phone.trim() || !invoice.trim()) {
+      setError('Customer name, phone, and invoice number are required.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName,
+          phone,
+          address,
+          invoice,
+          deliveryDate,
+          source,
+          priority,
+          items,
+          advance,
+          due,
+          notes,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to create order.');
+        setSubmitting(false);
+        return;
+      }
+
+      router.push('/orders');
+      router.refresh();
+    } catch {
+      setError('Network error — please try again.');
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="top">
+        <div>
+          <div className="title">Create Order</div>
+          <div className="muted">Create a new customer order</div>
+        </div>
+      </div>
+
+      <section className="panel">
+        {error && (
+          <div
+            style={{
+              background: '#fef3f2',
+              color: '#b42318',
+              border: '1px solid #fecdca',
+              borderRadius: 9,
+              padding: 12,
+              marginBottom: 16,
+              fontSize: 14,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <h3>Customer</h3>
+        <div className="formgrid">
+          <div className="field">
+            <label>Customer Name *</label>
+            <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Phone *</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <div className="field full">
+            <label>Address *</label>
+            <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
+          </div>
+        </div>
+
+        <h3 style={{ marginTop: 25 }}>Order Information</h3>
+        <div className="formgrid">
+          <div className="field">
+            <label>Invoice Number *</label>
+            <input
+              placeholder="INV-260923-001"
+              value={invoice}
+              onChange={(e) => setInvoice(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label>Expected Delivery *</label>
+            <input
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label>Order Source</label>
+            <select value={source} onChange={(e) => setSource(e.target.value)}>
+              <option>Facebook</option>
+              <option>WhatsApp</option>
+              <option>Call</option>
+              <option>Walk-in</option>
+              <option>Reference</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Priority</label>
+            <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+              <option>Normal</option>
+              <option>Urgent</option>
+              <option>Emergency</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 style={{ marginTop: 25 }}>Products</h3>
+        {items.map((item, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 120px 150px 40px',
+              gap: 8,
+              marginBottom: 8,
+            }}
+          >
+            <input
+              placeholder="Product"
+              value={item.product}
+              onChange={(e) => updateItem(i, { product: e.target.value })}
+            />
+            <input
+              type="number"
+              placeholder="Qty"
+              value={item.qty}
+              onChange={(e) => updateItem(i, { qty: Number(e.target.value) })}
+            />
+            <input
+              type="number"
+              placeholder="Unit Price"
+              value={item.price}
+              onChange={(e) => updateItem(i, { price: Number(e.target.value) })}
+            />
+            <button
+              className="btn secondary"
+              onClick={() => setItems(items.filter((_, j) => j !== i))}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          className="btn secondary"
+          onClick={() => setItems([...items, { product: '', qty: 1, price: 0 }])}
+        >
+          + Add Product
+        </button>
+
+        <h3 style={{ marginTop: 25 }}>Payment</h3>
+        <div className="formgrid">
+          <div className="field">
+            <label>Advance</label>
+            <input
+              type="number"
+              value={advance}
+              onChange={(e) => setAdvance(Number(e.target.value))}
+            />
+          </div>
+          <div className="field">
+            <label>COD / Due</label>
+            <input type="number" value={due} onChange={(e) => setDue(Number(e.target.value))} />
+          </div>
+          <div className="field full">
+            <label>Notes</label>
+            <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="actions">
+          <button className="btn secondary" onClick={() => router.push('/orders')}>
+            Cancel
+          </button>
+          <button className="btn" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? 'Creating...' : 'Create Order'}
+          </button>
+        </div>
+      </section>
+    </>
+  );
+}

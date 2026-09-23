@@ -2,6 +2,8 @@ import Link from 'next/link';
 import OrderTable from '@/components/OrderTable';
 import { getOrders } from '@/lib/orders';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Orders() {
   const orders = await getOrders();
 
