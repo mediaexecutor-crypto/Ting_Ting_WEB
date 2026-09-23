@@ -1,4 +1,3 @@
-```ts
 import { supabase } from './supabase';
 import { Order, OrderStatus } from './types';
 
@@ -35,4 +34,3 @@ export async function getOrders(): Promise<Order[]> {
     status: order.status as OrderStatus,
   }));
 }
-```
