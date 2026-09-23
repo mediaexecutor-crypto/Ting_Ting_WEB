@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import { Order, OrderStatus } from './types';
 
 export async function getOrders(): Promise<Order[]> {
+console.log('SUPABASE URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log('SUPABASE KEY EXISTS:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const { data, error } = await supabase
     .from('orders')
     .select(`
