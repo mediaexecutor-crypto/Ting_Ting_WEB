@@ -1,0 +1,1 @@
+export default function Page(){return <><div className="title">Calendar</div><div className="muted" style={{marginTop:8}}>V1 module scaffold — implementation follows the approved OMS architecture.</div><section className="panel" style={{marginTop:20}}><h3>Calendar</h3><p>This module is reserved for the next implementation phase.</p></section></>}
