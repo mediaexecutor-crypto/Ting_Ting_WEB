@@ -1,6 +1,6 @@
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI!;
+const GOOGLE_CLIENT_ID = (process.env.GOOGLE_CLIENT_ID ?? '').trim();
+const GOOGLE_CLIENT_SECRET = (process.env.GOOGLE_CLIENT_SECRET ?? '').trim();
+const GOOGLE_REDIRECT_URI = (process.env.GOOGLE_REDIRECT_URI ?? '').trim();
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
