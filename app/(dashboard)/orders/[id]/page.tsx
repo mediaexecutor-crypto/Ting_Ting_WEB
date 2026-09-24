@@ -70,9 +70,21 @@ export default async function OrderDetailPage({ params }: Props) {
                 <td>{order!.source || '—'}</td>
               </tr>
               <tr>
-                <td className="muted">Total / Due</td>
+                <td className="muted">Products Total</td>
+                <td>৳{order!.amount.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td className="muted">Delivery Charge</td>
+                <td>৳{order!.deliveryCharge.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td className="muted">Advance Paid</td>
+                <td>৳{order!.advance.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td className="muted">Due</td>
                 <td>
-                  ৳{order!.amount.toLocaleString()} / ৳{order!.due.toLocaleString()}
+                  <b>৳{order!.due.toLocaleString()}</b>
                 </td>
               </tr>
               {order!.notes && (

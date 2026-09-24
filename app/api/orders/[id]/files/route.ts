@@ -28,7 +28,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const customer: any = order.customers;
-  const folderName = `${customer?.name ?? 'Customer'} - ${customer?.phone ?? ''}`;
+  const folderName =
+    [customer?.name?.trim(), customer?.phone?.trim()].filter(Boolean).join(' - ') ||
+    `Order ${orderId}`;
 
   try {
     const folder = await getOrCreateOrderFolder(orderId, folderName);

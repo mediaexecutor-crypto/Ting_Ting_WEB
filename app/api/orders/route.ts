@@ -5,13 +5,6 @@ import { NewOrderPayload } from '@/lib/types';
 export async function POST(request: Request) {
   const body = (await request.json()) as NewOrderPayload;
 
-  if (!body.customerName?.trim() || !body.phone?.trim() || !body.invoice?.trim()) {
-    return NextResponse.json(
-      { error: 'Customer name, phone, and invoice number are required.' },
-      { status: 400 }
-    );
-  }
-
   try {
     const orderId = await createOrder(body);
     return NextResponse.json({ id: orderId }, { status: 201 });

@@ -7,24 +7,31 @@ export async function findOrCreateCustomer(
   phone: string,
   address: string
 ): Promise<string> {
-  const { data: existing, error: findError } = await supabaseAdmin
-    .from('customers')
-    .select('id')
-    .eq('phone', phone)
-    .maybeSingle();
+  const trimmedPhone = phone.trim();
 
-  if (findError) {
-    console.error('Failed to look up customer:', findError);
-    throw findError;
-  }
+  // Nothing is required on the order form, so phone can be blank. Don't
+  // dedupe on an empty string (that would merge every no-phone customer
+  // into one row) — just create a fresh customer each time.
+  if (trimmedPhone !== '') {
+    const { data: existing, error: findError } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('phone', trimmedPhone)
+      .maybeSingle();
 
-  if (existing) {
-    return existing.id as string;
+    if (findError) {
+      console.error('Failed to look up customer:', findError);
+      throw findError;
+    }
+
+    if (existing) {
+      return existing.id as string;
+    }
   }
 
   const { data: created, error: insertError } = await supabaseAdmin
     .from('customers')
-    .insert({ name, phone, address })
+    .insert({ name: name.trim() || 'Unnamed Customer', phone: trimmedPhone, address })
     .select('id')
     .single();
 

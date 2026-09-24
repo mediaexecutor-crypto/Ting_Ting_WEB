@@ -31,6 +31,8 @@ export type Order = {
   orderDate: string;
   source: string;
   amount: number;
+  deliveryCharge: number;
+  advance: number;
   due: number;
   status: OrderStatus;
 };
@@ -50,7 +52,7 @@ export type NewOrderPayload = {
   source: string;
   priority: string;
   items: NewOrderItem[];
+  deliveryCharge: number;
   advance: number;
-  due: number;
   notes: string;
 };

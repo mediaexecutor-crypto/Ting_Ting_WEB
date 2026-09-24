@@ -13,6 +13,8 @@ export async function getOrders(): Promise<Order[]> {
       order_date,
       source,
       total_amount,
+      delivery_charge,
+      advance,
       due_amount,
       status,
       customers (
@@ -38,6 +40,8 @@ export async function getOrders(): Promise<Order[]> {
     orderDate: order.order_date,
     source: order.source ?? '',
     amount: Number(order.total_amount ?? 0),
+    deliveryCharge: Number(order.delivery_charge ?? 0),
+    advance: Number(order.advance ?? 0),
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
   }));
@@ -67,6 +71,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       order_date,
       source,
       total_amount,
+      delivery_charge,
+      advance,
       due_amount,
       status,
       notes,
@@ -95,6 +101,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     orderDate: order.order_date,
     source: order.source ?? '',
     amount: Number(order.total_amount ?? 0),
+    deliveryCharge: Number(order.delivery_charge ?? 0),
+    advance: Number(order.advance ?? 0),
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
     notes: order.notes ?? '',
@@ -114,23 +122,29 @@ export async function createOrder(payload: NewOrderPayload) {
     payload.address
   );
 
-  const totalAmount = payload.items.reduce(
-    (sum, item) => sum + item.qty * item.price,
-    0
-  );
+  const itemsTotal = payload.items.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const deliveryCharge = payload.deliveryCharge || 0;
+  const advance = payload.advance || 0;
+  const dueAmount = itemsTotal + deliveryCharge - advance;
+
+  // Nothing is required from the form — invoice just needs to be unique,
+  // so auto-generate one if the person left it blank (they can rename it
+  // later from the order page).
+  const invoice = payload.invoice.trim() || `ORD-${Date.now()}`;
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
     .insert({
-      invoice: payload.invoice,
+      invoice,
       customer_id: customerId,
       delivery_date: payload.deliveryDate || null,
       source: payload.source,
       priority: payload.priority,
       status: 'NEW',
-      total_amount: totalAmount,
-      advance: payload.advance,
-      due_amount: payload.due,
+      total_amount: itemsTotal,
+      delivery_charge: deliveryCharge,
+      advance,
+      due_amount: dueAmount,
       notes: payload.notes,
     })
     .select('id')
@@ -165,7 +179,10 @@ export async function createOrder(payload: NewOrderPayload) {
   // connected. Never let a Drive hiccup fail the order itself — the
   // folder can also be created lazily on first file upload.
   try {
-    await getOrCreateOrderFolder(order.id, `${payload.customerName} - ${payload.phone}`);
+    const folderName = [payload.customerName.trim(), payload.phone.trim()]
+      .filter(Boolean)
+      .join(' - ') || `Order ${invoice}`;
+    await getOrCreateOrderFolder(order.id, folderName);
   } catch (err) {
     console.error('Order created, but Drive folder creation failed:', err);
   }
