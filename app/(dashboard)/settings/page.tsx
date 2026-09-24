@@ -58,7 +58,7 @@ export default async function SettingsPage({ searchParams }: Props) {
         >
           {drive_error === 'no_refresh_token'
             ? 'Google already had a prior connection and didn\'t return a fresh token. Remove access at myaccount.google.com/permissions and try Connect again.'
-            : 'Something went wrong connecting Google Drive. Please try again.'}
+            : `Something went wrong connecting Google Drive: ${drive_error}`}
         </div>
       )}
 

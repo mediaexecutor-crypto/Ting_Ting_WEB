@@ -15,17 +15,31 @@ export async function saveGoogleAccount(
 ) {
   // One connected Drive account is enough for this small team; if the
   // same Google account reconnects (or a different teammate connects),
-  // upsert by provider_account_id so we don't pile up duplicate rows.
-  const { error } = await supabaseAdmin.from('google_accounts').upsert(
-    {
-      user_id: userId,
-      email,
-      provider_account_id: email,
-      access_token_encrypted: encrypt(accessToken),
-      refresh_token_encrypted: encrypt(refreshToken),
-    },
-    { onConflict: 'provider_account_id' }
-  );
+  // update the existing row by provider_account_id so we don't pile up
+  // duplicates. (No DB-level unique constraint on that column, so this
+  // is done as an explicit check rather than an upsert/onConflict.)
+  const { data: existing, error: findError } = await supabaseAdmin
+    .from('google_accounts')
+    .select('id')
+    .eq('provider_account_id', email)
+    .maybeSingle();
+
+  if (findError) {
+    console.error('Failed to look up Google account:', findError);
+    throw findError;
+  }
+
+  const record = {
+    user_id: userId,
+    email,
+    provider_account_id: email,
+    access_token_encrypted: encrypt(accessToken),
+    refresh_token_encrypted: encrypt(refreshToken),
+  };
+
+  const { error } = existing
+    ? await supabaseAdmin.from('google_accounts').update(record).eq('id', existing.id)
+    : await supabaseAdmin.from('google_accounts').insert(record);
 
   if (error) {
     console.error('Failed to save Google account:', error);

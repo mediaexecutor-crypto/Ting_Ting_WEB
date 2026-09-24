@@ -28,6 +28,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/settings?drive_connected=1`);
   } catch (err) {
     console.error('Google OAuth callback failed:', err);
-    return NextResponse.redirect(`${origin}/settings?drive_error=1`);
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.redirect(
+      `${origin}/settings?drive_error=${encodeURIComponent(message.slice(0, 200))}`
+    );
   }
 }
