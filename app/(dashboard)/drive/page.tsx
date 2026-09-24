@@ -1,1 +1,42 @@
-export default function Page(){return <><div className="title">Drive</div><div className="muted" style={{marginTop:8}}>V1 module scaffold — implementation follows the approved OMS architecture.</div><section className="panel" style={{marginTop:20}}><h3>Drive</h3><p>This module is reserved for the next implementation phase.</p></section></>}
+import Link from 'next/link';
+import { getConnectedGoogleAccount } from '@/lib/googleAccount';
+
+export const dynamic = 'force-dynamic';
+
+export default async function DrivePage() {
+  const account = await getConnectedGoogleAccount();
+
+  return (
+    <>
+      <div className="top">
+        <div>
+          <div className="title">Drive Storage</div>
+          <div className="muted">Files are organized per order</div>
+        </div>
+      </div>
+
+      <section className="panel">
+        {account ? (
+          <div>
+            <div style={{ marginBottom: 10 }}>
+              Connected as <b>{account.email}</b>.
+            </div>
+            <p className="muted" style={{ fontSize: 14 }}>
+              Each order automatically gets its own Drive folder. Open any order from the{' '}
+              <Link href="/orders">Orders</Link> page to view or upload its files.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <p className="muted" style={{ fontSize: 14, marginBottom: 10 }}>
+              No Google Drive account connected yet.
+            </p>
+            <Link className="btn" href="/settings">
+              Connect in Settings
+            </Link>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}

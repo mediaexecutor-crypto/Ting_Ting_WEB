@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Order } from '@/lib/types';
 import { isOverdue } from '@/lib/date';
 
@@ -24,7 +25,9 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
         {orders.map((o) => (
           <tr key={o.id}>
             <td>
-              <b>{o.invoice}</b>
+              <Link href={`/orders/${o.id}`} style={{ fontWeight: 700 }}>
+                {o.invoice}
+              </Link>
             </td>
 
             <td>{o.customer}</td>
