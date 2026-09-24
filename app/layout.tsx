@@ -1,3 +1,13 @@
 import './globals.css';
-import Link from 'next/link';
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body><div className="shell"><aside className="sidebar"><div className="brand">CODS OMS</div><nav className="nav"><Link className="active" href="/">🏠 Dashboard</Link><Link href="/orders">📦 Orders</Link><Link href="/customers">👤 Customers</Link><Link href="/deliveries">🚚 Deliveries</Link><Link href="/calendar">📅 Calendar</Link><Link href="/drive">📁 Drive Storage</Link><Link href="/reports">📊 Reports</Link><Link href="/settings">⚙️ Settings</Link></nav></aside><main className="main">{children}</main></div></body></html>}
+
+export const metadata = {
+  title: 'CODS OMS',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
