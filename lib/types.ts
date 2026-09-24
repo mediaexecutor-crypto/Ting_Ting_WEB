@@ -28,6 +28,8 @@ export type Order = {
   phone: string;
   address: string;
   delivery: string;
+  orderDate: string;
+  source: string;
   amount: number;
   due: number;
   status: OrderStatus;
