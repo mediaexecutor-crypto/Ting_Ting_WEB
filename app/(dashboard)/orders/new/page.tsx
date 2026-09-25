@@ -118,9 +118,10 @@ export default function NewOrder() {
         <h3 style={{ marginTop: 25 }}>Order Information</h3>
         <div className="formgrid">
           <div className="field">
-            <label>Invoice Number</label>
+            <label>Invoice Number (max 6 characters, optional)</label>
             <input
-              placeholder="Leave blank to auto-generate"
+              placeholder="Optional"
+              maxLength={6}
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
             />

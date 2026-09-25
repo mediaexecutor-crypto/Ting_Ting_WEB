@@ -9,15 +9,16 @@ export type TeamMember = {
 };
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+  const [{ data: authData, error: authError }, { data: profiles, error: profileError }] =
+    await Promise.all([
+      supabaseAdmin.auth.admin.listUsers(),
+      supabaseAdmin.from('profiles').select('id, full_name, role, created_at'),
+    ]);
+
   if (authError) {
     console.error('Failed to list users:', authError);
     throw authError;
   }
-
-  const { data: profiles, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('id, full_name, role, created_at');
   if (profileError) {
     console.error('Failed to fetch profiles:', profileError);
     throw profileError;

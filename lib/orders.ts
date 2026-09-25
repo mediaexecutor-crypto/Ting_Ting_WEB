@@ -32,7 +32,7 @@ export async function getOrders(): Promise<Order[]> {
 
   return (data ?? []).map((order: any) => ({
     id: order.id,
-    invoice: order.invoice,
+    invoice: order.invoice ?? '',
     customer: order.customers?.name ?? '',
     phone: order.customers?.phone ?? '',
     address: order.customers?.address ?? '',
@@ -93,7 +93,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
 
   return {
     id: order.id,
-    invoice: order.invoice,
+    invoice: order.invoice ?? '',
     customer: order.customers?.name ?? '',
     phone: order.customers?.phone ?? '',
     address: order.customers?.address ?? '',
@@ -127,10 +127,12 @@ export async function createOrder(payload: NewOrderPayload) {
   const advance = payload.advance || 0;
   const dueAmount = itemsTotal + deliveryCharge - advance;
 
-  // Nothing is required from the form — invoice just needs to be unique,
-  // so auto-generate one if the person left it blank (they can rename it
-  // later from the order page).
-  const invoice = payload.invoice.trim() || `ORD-${Date.now()}`;
+  // Invoice is optional and capped at 6 characters. Left blank, it's
+  // stored as NULL (not an empty string or an auto-generated value) so
+  // multiple no-invoice orders don't collide with the unique constraint
+  // — Postgres allows any number of NULLs in a unique column.
+  const trimmedInvoice = payload.invoice.trim().slice(0, 6);
+  const invoice = trimmedInvoice || null;
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
@@ -181,7 +183,7 @@ export async function createOrder(payload: NewOrderPayload) {
   try {
     const folderName = [payload.customerName.trim(), payload.phone.trim()]
       .filter(Boolean)
-      .join(' - ') || `Order ${invoice}`;
+      .join(' - ') || `Order ${order.id.slice(0, 8)}`;
     await getOrCreateOrderFolder(order.id, folderName);
   } catch (err) {
     console.error('Order created, but Drive folder creation failed:', err);

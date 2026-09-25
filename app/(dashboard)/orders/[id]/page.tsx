@@ -14,20 +14,21 @@ type Props = {
 
 export default async function OrderDetailPage({ params }: Props) {
   const { id } = await params;
-  const order = await getOrderDetail(id);
+  const [order, files, folder] = await Promise.all([
+    getOrderDetail(id),
+    getOrderFiles(id),
+    getOrderFolder(id),
+  ]);
 
   if (!order) {
     notFound();
   }
 
-  const files = await getOrderFiles(id);
-  const folder = await getOrderFolder(id);
-
   return (
     <>
       <div className="top">
         <div>
-          <div className="title">{order!.invoice}</div>
+          <div className="title">{order!.invoice || 'No Invoice'}</div>
           <div className="muted">{order!.customer}</div>
         </div>
         <Link className="btn secondary" href="/orders">

@@ -93,7 +93,7 @@ export default async function CalendarPage({ searchParams }: Props) {
                       textOverflow: 'ellipsis',
                     }}
                   >
-                    {o.customer || o.invoice}
+                    {o.invoice || o.customer || 'Order'}
                   </div>
                 ))}
                 {d.orders.length > 3 && (

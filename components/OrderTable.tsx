@@ -26,7 +26,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
           <tr key={o.id}>
             <td>
               <Link href={`/orders/${o.id}`} style={{ fontWeight: 700 }}>
-                {o.invoice}
+                {o.invoice || 'No Invoice'}
               </Link>
             </td>
 

@@ -6,11 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const members = await getTeamMembers();
+  // getSession() is a local cookie read (no network call) — the strong
+  // getUser() check already happened in proxy.ts for this request.
+  const [{ data: { session } }, members] = await Promise.all([
+    supabase.auth.getSession(),
+    getTeamMembers(),
+  ]);
 
   return (
     <>
@@ -28,7 +30,7 @@ export default async function SettingsPage() {
           Authentication dashboard. ADMIN can see and manage every order; SALESPERSON is for
           more limited future use.
         </p>
-        <TeamMembersEditor members={members} currentUserId={user?.id ?? ''} />
+        <TeamMembersEditor members={members} currentUserId={session?.user?.id ?? ''} />
       </section>
     </>
   );

@@ -11,8 +11,7 @@ type Props = {
 export default async function DrivePage({ searchParams }: Props) {
   const { drive_connected, drive_error } = await searchParams;
 
-  const accounts = await getAllGoogleAccounts();
-  const targets = await getDriveTargets();
+  const [accounts, targets] = await Promise.all([getAllGoogleAccounts(), getDriveTargets()]);
 
   return (
     <>
