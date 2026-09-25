@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTeamMembers } from '@/lib/team';
-import { getConnectedGoogleAccount } from '@/lib/googleAccount';
+import { getAllGoogleAccounts } from '@/lib/googleAccount';
+import { getDriveTargets } from '@/lib/driveTargets';
 import TeamMembersEditor from '@/components/TeamMembersEditor';
+import DriveTargetsManager from '@/components/DriveTargetsManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +20,8 @@ export default async function SettingsPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
 
   const members = await getTeamMembers();
-  const googleAccount = await getConnectedGoogleAccount();
+  const accounts = await getAllGoogleAccounts();
+  const targets = await getDriveTargets();
 
   return (
     <>
@@ -64,26 +67,19 @@ export default async function SettingsPage({ searchParams }: Props) {
 
       <section className="panel">
         <h3>Google Drive</h3>
-        {googleAccount ? (
-          <div>
-            <div style={{ marginBottom: 10 }}>
-              Connected as <b>{googleAccount.email}</b>. New orders automatically get a Drive
-              folder, and files can be uploaded from each order's page.
-            </div>
-            <a className="btn secondary" href="/api/auth/google">
-              Reconnect
-            </a>
-          </div>
-        ) : (
-          <div>
-            <div className="muted" style={{ marginBottom: 10 }}>
-              Not connected yet. Connect a Google account to enable per-order file storage.
-            </div>
-            <a className="btn" href="/api/auth/google">
-              Connect Google Drive
-            </a>
-          </div>
-        )}
+        <p className="muted" style={{ marginTop: -8, marginBottom: 16, fontSize: 13 }}>
+          Every teammate can connect their own Google account. New order folders are always
+          created in whichever destination below is marked <b>Active</b> — switching active
+          destinations never removes or hides folders/files already created under an older one.
+        </p>
+
+        <DriveTargetsManager targets={targets} accounts={accounts} />
+
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #edf0f3' }}>
+          <a className="btn" href="/api/auth/google">
+            Connect a Google Account
+          </a>
+        </div>
       </section>
 
       <section className="panel" style={{ marginTop: 18 }}>

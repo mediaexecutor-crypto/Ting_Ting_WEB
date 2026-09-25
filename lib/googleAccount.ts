@@ -1,6 +1,7 @@
 import { supabaseAdmin } from './supabaseAdmin';
 import { encrypt, decrypt } from './crypto';
 import { refreshAccessToken } from './googleDrive';
+import { addDriveTarget } from './driveTargets';
 
 export type GoogleAccount = {
   id: string;
@@ -13,11 +14,10 @@ export async function saveGoogleAccount(
   accessToken: string,
   refreshToken: string
 ) {
-  // One connected Drive account is enough for this small team; if the
-  // same Google account reconnects (or a different teammate connects),
-  // update the existing row by provider_account_id so we don't pile up
-  // duplicates. (No DB-level unique constraint on that column, so this
-  // is done as an explicit check rather than an upsert/onConflict.)
+  // Each distinct Google account (by email) gets its own row — team
+  // members can each connect their own Drive, and the same person can
+  // connect more than one account. Reconnecting the same email just
+  // refreshes its stored tokens rather than creating a duplicate.
   const { data: existing, error: findError } = await supabaseAdmin
     .from('google_accounts')
     .select('id')
@@ -37,13 +37,42 @@ export async function saveGoogleAccount(
     refresh_token_encrypted: encrypt(refreshToken),
   };
 
-  const { error } = existing
-    ? await supabaseAdmin.from('google_accounts').update(record).eq('id', existing.id)
-    : await supabaseAdmin.from('google_accounts').insert(record);
+  let accountId = existing?.id as string | undefined;
 
-  if (error) {
-    console.error('Failed to save Google account:', error);
-    throw error;
+  if (existing) {
+    const { error } = await supabaseAdmin
+      .from('google_accounts')
+      .update(record)
+      .eq('id', existing.id);
+    if (error) {
+      console.error('Failed to save Google account:', error);
+      throw error;
+    }
+  } else {
+    const { data: inserted, error } = await supabaseAdmin
+      .from('google_accounts')
+      .insert(record)
+      .select('id')
+      .single();
+    if (error) {
+      console.error('Failed to save Google account:', error);
+      throw error;
+    }
+    accountId = inserted.id;
+  }
+
+  // Brand new account: give it a default target (Drive root) and make
+  // it active. Reconnecting an existing account (token refresh) leaves
+  // its target(s) and the currently-active target untouched.
+  if (!existing && accountId) {
+    const { count } = await supabaseAdmin
+      .from('drive_targets')
+      .select('id', { count: 'exact', head: true })
+      .eq('google_account_id', accountId);
+
+    if (!count) {
+      await addDriveTarget(accountId, email, '');
+    }
   }
 }
 
@@ -61,6 +90,20 @@ export async function getConnectedGoogleAccount(): Promise<GoogleAccount | null>
   }
 
   return data;
+}
+
+export async function getAllGoogleAccounts(): Promise<GoogleAccount[]> {
+  const { data, error } = await supabaseAdmin
+    .from('google_accounts')
+    .select('id, email')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Failed to list Google accounts:', error);
+    throw error;
+  }
+
+  return data ?? [];
 }
 
 // Always refreshes using the stored refresh_token — no expiry bookkeeping
