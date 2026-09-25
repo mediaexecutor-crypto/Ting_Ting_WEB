@@ -83,7 +83,7 @@ export async function addDriveTarget(
 
   const { error } = await supabaseAdmin.from('drive_targets').insert({
     google_account_id: googleAccountId,
-    label: label.trim() || 'Untitled',
+    label: label.trim() || 'Drive folder',
     parent_folder_id: parentFolderId,
     parent_folder_url: parentFolderId ? parentFolderUrlOrId.trim() : null,
     is_active: true,
@@ -106,5 +106,41 @@ export async function setActiveDriveTarget(id: string) {
   if (error) {
     console.error('Failed to set active Drive target:', error);
     throw error;
+  }
+}
+
+// Removes a target from the list (does not touch already-created order
+// folders/files — those keep referencing their google_account_id
+// directly, so nothing existing breaks). If the removed target was
+// active, the next-oldest remaining target (if any) becomes active.
+export async function deleteDriveTarget(id: string) {
+  const { data: target, error: findError } = await supabaseAdmin
+    .from('drive_targets')
+    .select('is_active')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (findError) {
+    console.error('Failed to look up Drive target:', findError);
+    throw findError;
+  }
+
+  const { error: deleteError } = await supabaseAdmin.from('drive_targets').delete().eq('id', id);
+  if (deleteError) {
+    console.error('Failed to delete Drive target:', deleteError);
+    throw deleteError;
+  }
+
+  if (target?.is_active) {
+    const { data: next } = await supabaseAdmin
+      .from('drive_targets')
+      .select('id')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (next) {
+      await supabaseAdmin.from('drive_targets').update({ is_active: true }).eq('id', next.id);
+    }
   }
 }

@@ -13,6 +13,7 @@ export default function DriveTargetsManager({
 }) {
   const router = useRouter();
   const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccountId, setNewAccountId] = useState(accounts[0]?.id ?? '');
@@ -25,6 +26,16 @@ export default function DriveTargetsManager({
     setActivatingId(id);
     await fetch(`/api/drive-targets/${id}/activate`, { method: 'POST' });
     setActivatingId(null);
+    router.refresh();
+  }
+
+  async function handleDelete(id: string, label: string) {
+    if (!window.confirm(`Remove "${label}"? Files already uploaded under it stay untouched.`)) {
+      return;
+    }
+    setDeletingId(id);
+    await fetch(`/api/drive-targets/${id}`, { method: 'DELETE' });
+    setDeletingId(null);
     router.refresh();
   }
 
@@ -82,15 +93,25 @@ export default function DriveTargetsManager({
               {t.accountEmail} {t.parentFolderUrl ? '· custom folder' : '· Drive root'}
             </div>
           </div>
-          {!t.isActive && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            {!t.isActive && (
+              <button
+                className="btn secondary"
+                onClick={() => handleActivate(t.id)}
+                disabled={activatingId === t.id}
+              >
+                {activatingId === t.id ? 'Switching...' : 'Set Active'}
+              </button>
+            )}
             <button
               className="btn secondary"
-              onClick={() => handleActivate(t.id)}
-              disabled={activatingId === t.id}
+              onClick={() => handleDelete(t.id, t.label)}
+              disabled={deletingId === t.id}
+              style={{ color: '#b42318' }}
             >
-              {activatingId === t.id ? 'Switching...' : 'Set Active'}
+              {deletingId === t.id ? 'Removing...' : 'Remove'}
             </button>
-          )}
+          </div>
         </div>
       ))}
       {targets.length === 0 && (

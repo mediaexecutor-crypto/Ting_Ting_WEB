@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const error = searchParams.get('error');
 
   if (error || !code || !userId) {
-    return NextResponse.redirect(`${origin}/settings?drive_error=1`);
+    return NextResponse.redirect(`${origin}/drive?drive_error=1`);
   }
 
   try {
@@ -19,18 +19,18 @@ export async function GET(request: Request) {
       // Happens if the user has already granted consent before and Google
       // skips issuing a fresh refresh_token. They need to revoke access at
       // https://myaccount.google.com/permissions and reconnect.
-      return NextResponse.redirect(`${origin}/settings?drive_error=no_refresh_token`);
+      return NextResponse.redirect(`${origin}/drive?drive_error=no_refresh_token`);
     }
 
     const email = await getGoogleUserEmail(tokens.access_token);
     await saveGoogleAccount(userId, email, tokens.access_token, tokens.refresh_token);
 
-    return NextResponse.redirect(`${origin}/settings?drive_connected=1`);
+    return NextResponse.redirect(`${origin}/drive?drive_connected=1`);
   } catch (err) {
     console.error('Google OAuth callback failed:', err);
     const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.redirect(
-      `${origin}/settings?drive_error=${encodeURIComponent(message.slice(0, 200))}`
+      `${origin}/drive?drive_error=${encodeURIComponent(message.slice(0, 200))}`
     );
   }
 }
