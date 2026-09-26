@@ -152,7 +152,8 @@ export default function NewOrder() {
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
             />
-            <div className="field">
+          </div>
+          <div className="field">
             <label>Expected Delivery</label>
             <input
               type="date"
