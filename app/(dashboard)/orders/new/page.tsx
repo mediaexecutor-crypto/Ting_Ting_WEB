@@ -208,7 +208,7 @@ export default function NewOrder() {
             <input
               type="number"
               placeholder="Unit Price"
-              value={item.price}
+              value={item.price === 0 ? '' : item.price}
               onChange={(e) => updateItem(i, { price: Number(e.target.value) })}
             />
             <div className="muted" style={{ fontSize: 13, textAlign: 'right' }}>
@@ -242,7 +242,7 @@ export default function NewOrder() {
             <label>Delivery Charge</label>
             <input
               type="number"
-              value={deliveryCharge}
+              value={deliveryCharge === 0 ? '' : deliveryCharge}
               onChange={(e) => setDeliveryCharge(Number(e.target.value))}
             />
           </div>
@@ -250,7 +250,7 @@ export default function NewOrder() {
             <label>Advance</label>
             <input
               type="number"
-              value={advance}
+              value={advance === 0 ? '' : advance}
               onChange={(e) => setAdvance(Number(e.target.value))}
             />
           </div>

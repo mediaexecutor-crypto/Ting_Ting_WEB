@@ -249,7 +249,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           <input
             type="number"
             placeholder="Unit Price"
-            value={item.price}
+            value={item.price === 0 ? '' : item.price}
             onChange={(e) => updateItem(i, { price: Number(e.target.value) })}
             disabled={locked}
           />
@@ -293,7 +293,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           <label>Delivery Charge</label>
           <input
             type="number"
-            value={deliveryCharge}
+            value={deliveryCharge === 0 ? '' : deliveryCharge}
             onChange={(e) => setDeliveryCharge(Number(e.target.value))}
             disabled={locked}
           />
@@ -302,7 +302,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           <label>Advance</label>
           <input
             type="number"
-            value={advance}
+            value={advance === 0 ? '' : advance}
             onChange={(e) => setAdvance(Number(e.target.value))}
             disabled={locked}
           />
