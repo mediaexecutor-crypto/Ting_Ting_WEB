@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { OrderDetail } from '@/lib/orders';
 import { ORDER_STATUSES, NewOrderItem } from '@/lib/types';
 import { statusClassName } from '@/lib/statusColors';
+import { isOverdue } from '@/lib/date';
 
 function itemsFromOrder(order: OrderDetail): NewOrderItem[] {
   return order.items.length > 0
@@ -35,7 +36,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
-  const locked = !editing; // read-only view mode
   const itemsTotal = items.reduce((sum, it) => sum + (it.qty || 0) * (it.price || 0), 0);
   const grandTotal = itemsTotal + (deliveryCharge || 0);
   const due = grandTotal - (advance || 0);
@@ -108,17 +108,131 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
     }
   }
 
-  return (
-    <section className="panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div className="muted" style={{ fontSize: 13 }}>
-          {locked ? 'View mode — press Edit to make changes.' : 'Editing — remember to Save.'}
-        </div>
-        {locked && (
+  // ---------------------------------------------------------------
+  // VIEW MODE — clean read-only display, matching the original layout
+  // ---------------------------------------------------------------
+  if (!editing) {
+    return (
+      <section className="panel">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
           <button className="btn secondary" onClick={() => setEditing(true)}>
             ✎ Edit
           </button>
-        )}
+        </div>
+
+        <h3>Order Info</h3>
+        <table className="table">
+          <tbody>
+            <tr>
+              <td className="muted">Status</td>
+              <td>
+                <span className={statusClassName(order.status)}>{order.status}</span>
+              </td>
+            </tr>
+            <tr>
+              <td className="muted">Customer</td>
+              <td>{order.customer || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Phone</td>
+              <td>{order.phone || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Address</td>
+              <td>{order.address || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Order Confirmed Date</td>
+              <td>{order.confirmedDate || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Delivery Date</td>
+              <td>
+                {order.delivery || '—'}
+                {order.delivery && isOverdue(order.delivery, order.status) && (
+                  <span style={{ color: '#b42318', fontWeight: 700, marginLeft: 8 }}>OVERDUE</span>
+                )}
+              </td>
+            </tr>
+            <tr>
+              <td className="muted">Source</td>
+              <td>{order.source || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Products Total</td>
+              <td>৳{order.amount.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td className="muted">Delivery Charge</td>
+              <td>৳{order.deliveryCharge.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td className="muted">Advance Paid</td>
+              <td>৳{order.advance.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td className="muted">Due</td>
+              <td>
+                <b>৳{order.due.toLocaleString()}</b>
+              </td>
+            </tr>
+            {order.productNotes && (
+              <tr>
+                <td className="muted">Product Details Note</td>
+                <td>{order.productNotes}</td>
+              </tr>
+            )}
+            {order.notes && (
+              <tr>
+                <td className="muted">Notes</td>
+                <td>{order.notes}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <h3 style={{ marginTop: 22 }}>
+          Products{' '}
+          <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>
+            Total Qty: {order.items.reduce((s, it) => s + it.qty, 0)}
+          </span>
+        </h3>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {order.items.map((it) => (
+              <tr key={it.id}>
+                <td>{it.product}</td>
+                <td>{it.qty}</td>
+                <td>৳{it.price.toLocaleString()}</td>
+              </tr>
+            ))}
+            {order.items.length === 0 && (
+              <tr>
+                <td colSpan={3} className="muted">
+                  No products listed.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+    );
+  }
+
+  // ---------------------------------------------------------------
+  // EDIT MODE
+  // ---------------------------------------------------------------
+  return (
+    <section className="panel">
+      <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
+        Editing — remember to Save.
       </div>
 
       {error && (
@@ -139,11 +253,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
 
       <div className="field" style={{ marginBottom: 18, maxWidth: 260 }}>
         <label>Status</label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as typeof status)}
-          disabled={locked}
-        >
+        <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
           {ORDER_STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -159,15 +269,15 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       <div className="formgrid">
         <div className="field">
           <label>Customer Name</label>
-          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={locked} />
+          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
         </div>
         <div className="field">
           <label>Phone</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={locked} />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <div className="field full">
           <label>Address</label>
-          <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} disabled={locked} />
+          <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
       </div>
 
@@ -175,29 +285,19 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       <div className="formgrid">
         <div className="field">
           <label>Invoice Number (max 6 characters)</label>
-          <input maxLength={6} value={invoice} onChange={(e) => setInvoice(e.target.value)} disabled={locked} />
+          <input maxLength={6} value={invoice} onChange={(e) => setInvoice(e.target.value)} />
         </div>
         <div className="field">
           <label>Order Confirmed Date</label>
-          <input
-            type="date"
-            value={confirmedDate}
-            onChange={(e) => setConfirmedDate(e.target.value)}
-            disabled={locked}
-          />
+          <input type="date" value={confirmedDate} onChange={(e) => setConfirmedDate(e.target.value)} />
         </div>
         <div className="field">
           <label>Expected Delivery</label>
-          <input
-            type="date"
-            value={deliveryDate}
-            onChange={(e) => setDeliveryDate(e.target.value)}
-            disabled={locked}
-          />
+          <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
         </div>
         <div className="field">
           <label>Order Source</label>
-          <select value={source} onChange={(e) => setSource(e.target.value)} disabled={locked}>
+          <select value={source} onChange={(e) => setSource(e.target.value)}>
             <option>Facebook</option>
             <option>WhatsApp</option>
             <option>Call</option>
@@ -208,7 +308,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
         </div>
         <div className="field">
           <label>Priority</label>
-          <select value={priority} onChange={(e) => setPriority(e.target.value)} disabled={locked}>
+          <select value={priority} onChange={(e) => setPriority(e.target.value)}>
             <option>Normal</option>
             <option>Urgent</option>
             <option>Emergency</option>
@@ -237,30 +337,23 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             placeholder="Product"
             value={item.product}
             onChange={(e) => updateItem(i, { product: e.target.value })}
-            disabled={locked}
           />
           <input
             type="number"
             placeholder="Qty"
             value={item.qty}
             onChange={(e) => updateItem(i, { qty: Number(e.target.value) })}
-            disabled={locked}
           />
           <input
             type="number"
             placeholder="Unit Price"
             value={item.price === 0 ? '' : item.price}
             onChange={(e) => updateItem(i, { price: Number(e.target.value) })}
-            disabled={locked}
           />
           <div className="muted" style={{ fontSize: 13, textAlign: 'right' }}>
             ৳{((item.qty || 0) * (item.price || 0)).toLocaleString()}
           </div>
-          <button
-            className="btn secondary"
-            onClick={() => setItems(items.filter((_, j) => j !== i))}
-            disabled={locked}
-          >
+          <button className="btn secondary" onClick={() => setItems(items.filter((_, j) => j !== i))}>
             ×
           </button>
         </div>
@@ -268,7 +361,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       <button
         className="btn secondary"
         onClick={() => setItems([...items, { product: '', qty: 1, price: 0 }])}
-        disabled={locked}
       >
         + Add Product
       </button>
@@ -283,7 +375,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           placeholder="Fabric, size breakdown, design notes..."
           value={productNotes}
           onChange={(e) => setProductNotes(e.target.value)}
-          disabled={locked}
         />
       </div>
 
@@ -295,7 +386,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             type="number"
             value={deliveryCharge === 0 ? '' : deliveryCharge}
             onChange={(e) => setDeliveryCharge(Number(e.target.value))}
-            disabled={locked}
           />
         </div>
         <div className="field">
@@ -304,7 +394,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             type="number"
             value={advance === 0 ? '' : advance}
             onChange={(e) => setAdvance(Number(e.target.value))}
-            disabled={locked}
           />
         </div>
         <div className="field">
@@ -318,25 +407,22 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
         </div>
         <div className="field full">
           <label>Notes</label>
-          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={locked} />
+          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
 
       <div className="muted" style={{ marginBottom: 4, fontSize: 14, textAlign: 'right' }}>
-        Grand Total (Products + Delivery):{' '}
-        <b style={{ color: '#111827' }}>৳{grandTotal.toLocaleString()}</b>
+        Grand Total (Products + Delivery): <b style={{ color: '#111827' }}>৳{grandTotal.toLocaleString()}</b>
       </div>
 
-      {editing && (
-        <div className="actions">
-          <button className="btn secondary" onClick={handleCancel} disabled={saving}>
-            Cancel
-          </button>
-          <button className="btn" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
-          </button>
-        </div>
-      )}
+      <div className="actions">
+        <button className="btn secondary" onClick={handleCancel} disabled={saving}>
+          Cancel
+        </button>
+        <button className="btn" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
+        </button>
+      </div>
     </section>
   );
 }
