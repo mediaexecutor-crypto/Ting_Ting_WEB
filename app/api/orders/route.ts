@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
     console.error('Order creation failed:', error);
     return NextResponse.json(
-      { error: 'Something went wrong while creating the order.' },
+      { error: `Something went wrong while creating the order: ${error?.message ?? 'unknown error'}` },
       { status: 500 }
     );
   }
