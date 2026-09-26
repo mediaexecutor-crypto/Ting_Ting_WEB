@@ -35,6 +35,7 @@ export type Order = {
   advance: number;
   due: number;
   status: OrderStatus;
+  salespersonId: string | null;
 };
 
 export type NewOrderItem = {

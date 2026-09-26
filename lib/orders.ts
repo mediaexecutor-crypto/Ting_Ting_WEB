@@ -3,8 +3,8 @@ import { findOrCreateCustomer } from './customers';
 import { getOrCreateOrderFolder } from './orderFolders';
 import { NewOrderPayload, Order, OrderStatus } from './types';
 
-export async function getOrders(): Promise<Order[]> {
-  const { data, error } = await supabaseAdmin
+export async function getOrders(salespersonId?: string): Promise<Order[]> {
+  let query = supabaseAdmin
     .from('orders')
     .select(`
       id,
@@ -17,6 +17,7 @@ export async function getOrders(): Promise<Order[]> {
       advance,
       due_amount,
       status,
+      salesperson_id,
       customers (
         name,
         phone,
@@ -24,6 +25,12 @@ export async function getOrders(): Promise<Order[]> {
       )
     `)
     .order('created_at', { ascending: false });
+
+  if (salespersonId) {
+    query = query.eq('salesperson_id', salespersonId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Failed to fetch orders:', error);
@@ -44,13 +51,14 @@ export async function getOrders(): Promise<Order[]> {
     advance: Number(order.advance ?? 0),
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
+    salespersonId: order.salesperson_id ?? null,
   }));
 }
 
 // Orders still awaiting delivery (excludes DELIVERED / CANCELLED),
 // soonest delivery date first.
-export async function getPendingDeliveries(): Promise<Order[]> {
-  const orders = await getOrders();
+export async function getPendingDeliveries(salespersonId?: string): Promise<Order[]> {
+  const orders = await getOrders(salespersonId);
   return orders
     .filter((o) => o.status !== 'DELIVERED' && o.status !== 'CANCELLED')
     .sort((a, b) => (a.delivery || '9999').localeCompare(b.delivery || '9999'));
@@ -59,8 +67,8 @@ export async function getPendingDeliveries(): Promise<Order[]> {
 // The Deliveries page specifically: only orders that have actually
 // reached the delivery stage (READY/DELIVERY/DELIVERED) — a product
 // still being designed or produced shouldn't show up here.
-export async function getDeliveryQueue(): Promise<Order[]> {
-  const orders = await getOrders();
+export async function getDeliveryQueue(salespersonId?: string): Promise<Order[]> {
+  const orders = await getOrders(salespersonId);
   const relevant: OrderStatus[] = ['READY', 'DELIVERY', 'DELIVERED'];
   return orders
     .filter((o) => relevant.includes(o.status))
@@ -74,6 +82,17 @@ export type OrderDetail = Order & {
   confirmedDate: string;
   productNotes: string;
 };
+
+// Returns the order's salesperson_id only (cheap check used to enforce
+// per-salesperson visibility before rendering/editing an order).
+export async function getOrderOwner(id: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('orders')
+    .select('salesperson_id')
+    .eq('id', id)
+    .maybeSingle();
+  return data?.salesperson_id ?? null;
+}
 
 export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabaseAdmin
@@ -93,6 +112,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       notes,
       product_notes,
       customer_id,
+      salesperson_id,
       customers ( name, phone, address ),
       order_items ( id, product_name, quantity, unit_price )
     `)
@@ -124,6 +144,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     advance: Number(order.advance ?? 0),
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
+    salespersonId: order.salesperson_id ?? null,
     notes: order.notes ?? '',
     productNotes: order.product_notes ?? '',
     items: (order.order_items ?? []).map((it: any) => ({
@@ -226,7 +247,7 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
   }
 }
 
-export async function createOrder(payload: NewOrderPayload) {
+export async function createOrder(payload: NewOrderPayload, salespersonId: string | null) {
   const customerId = await findOrCreateCustomer(
     payload.customerName,
     payload.phone,
@@ -259,6 +280,7 @@ export async function createOrder(payload: NewOrderPayload) {
       advance,
       due_amount: dueAmount,
       notes: payload.notes,
+      salesperson_id: salespersonId,
     })
     .select('id')
     .single();

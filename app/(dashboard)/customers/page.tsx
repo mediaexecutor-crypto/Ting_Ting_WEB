@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { getCustomersSummary } from '@/lib/customers';
+import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Customers() {
-  const customers = await getCustomersSummary();
+  const ctx = await getCurrentUserContext();
+  const customers = await getCustomersSummary(scopeFilter(ctx));
 
   return (
     <>

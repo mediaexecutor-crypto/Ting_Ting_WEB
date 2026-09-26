@@ -2,11 +2,13 @@ import { getDeliveryQueue } from '@/lib/orders';
 import { isOverdue } from '@/lib/date';
 import { statusClassName } from '@/lib/statusColors';
 import CopyDeliveryButton from '@/components/CopyDeliveryButton';
+import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Deliveries() {
-  const orders = await getDeliveryQueue();
+  const ctx = await getCurrentUserContext();
+  const orders = await getDeliveryQueue(scopeFilter(ctx));
 
   return (
     <>

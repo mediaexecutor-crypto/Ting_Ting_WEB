@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import OrderTable from '@/components/OrderTable';
 import { getOrders } from '@/lib/orders';
+import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 import { ORDER_STATUSES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,8 @@ type Props = {
 
 export default async function Orders({ searchParams }: Props) {
   const { q = '', status = '' } = await searchParams;
-  const allOrders = await getOrders();
+  const ctx = await getCurrentUserContext();
+  const allOrders = await getOrders(scopeFilter(ctx));
 
   const needle = q.trim().toLowerCase();
   const orders = allOrders.filter((o) => {

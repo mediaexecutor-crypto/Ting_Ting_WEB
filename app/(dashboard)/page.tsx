@@ -2,11 +2,13 @@ import Link from 'next/link';
 import OrderTable from '@/components/OrderTable';
 import { getOrders } from '@/lib/orders';
 import { computeDashboardStats } from '@/lib/dashboard';
+import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Dashboard() {
-  const orders = await getOrders();
+  const ctx = await getCurrentUserContext();
+  const orders = await getOrders(scopeFilter(ctx));
   const stats = computeDashboardStats(orders);
 
   const statCards: { label: string; value: number }[] = [

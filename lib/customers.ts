@@ -54,7 +54,7 @@ export type CustomerSummary = {
   lastOrderDate: string;
 };
 
-export async function getCustomersSummary(): Promise<CustomerSummary[]> {
+export async function getCustomersSummary(salespersonId?: string): Promise<CustomerSummary[]> {
   const { data, error } = await supabaseAdmin.from('customers').select(`
       id,
       name,
@@ -64,6 +64,7 @@ export async function getCustomersSummary(): Promise<CustomerSummary[]> {
         total_amount,
         status,
         order_date,
+        salesperson_id,
         order_items ( quantity )
       )
     `);
@@ -75,7 +76,13 @@ export async function getCustomersSummary(): Promise<CustomerSummary[]> {
 
   return (data ?? [])
     .map((c: any) => {
-      const orders = c.orders ?? [];
+      // A SALESPERSON only sees their own orders' contribution to a
+      // customer's numbers — and if they have no orders with this
+      // customer, the customer shouldn't show up for them at all.
+      const scopedOrders = salespersonId
+        ? (c.orders ?? []).filter((o: any) => o.salesperson_id === salespersonId)
+        : c.orders ?? [];
+      const orders = scopedOrders;
       const activeOrders = orders.filter((o: any) => o.status !== 'CANCELLED');
 
       const totalSales = activeOrders.reduce(
@@ -102,5 +109,6 @@ export async function getCustomersSummary(): Promise<CustomerSummary[]> {
         lastOrderDate,
       };
     })
+    .filter((c) => !salespersonId || c.orderCount > 0)
     .sort((a, b) => b.lastOrderDate.localeCompare(a.lastOrderDate));
 }

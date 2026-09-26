@@ -1,10 +1,12 @@
 import { getOrders } from '@/lib/orders';
+import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 import { computeReportStats } from '@/lib/reports';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage() {
-  const orders = await getOrders();
+  const ctx = await getCurrentUserContext();
+  const orders = await getOrders(scopeFilter(ctx));
   const stats = computeReportStats(orders);
 
   const maxMonthly = Math.max(1, ...stats.monthlyRevenue.map((m) => m.revenue));

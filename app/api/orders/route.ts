@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createOrder } from '@/lib/orders';
 import { NewOrderPayload } from '@/lib/types';
+import { getCurrentUserContext } from '@/lib/auth';
 
 export async function POST(request: Request) {
   const body = (await request.json()) as NewOrderPayload;
+  const ctx = await getCurrentUserContext();
 
   try {
-    const orderId = await createOrder(body);
+    const orderId = await createOrder(body, ctx?.id ?? null);
     return NextResponse.json({ id: orderId }, { status: 201 });
   } catch (error: any) {
     // Postgres unique_violation on the invoice column

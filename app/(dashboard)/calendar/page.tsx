@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getPendingDeliveries } from '@/lib/orders';
+import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 import { buildMonthGrid, shiftMonth, monthLabel, currentMonthStr } from '@/lib/calendar';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,8 @@ export default async function CalendarPage({ searchParams }: Props) {
   const { month } = await searchParams;
   const monthStr = month || currentMonthStr();
 
-  const orders = await getPendingDeliveries();
+  const ctx = await getCurrentUserContext();
+  const orders = await getPendingDeliveries(scopeFilter(ctx));
   const days = buildMonthGrid(monthStr, orders);
 
   return (

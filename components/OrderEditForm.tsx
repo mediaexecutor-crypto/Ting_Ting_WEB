@@ -5,8 +5,16 @@ import { OrderDetail } from '@/lib/orders';
 import { ORDER_STATUSES, NewOrderItem } from '@/lib/types';
 import { statusClassName } from '@/lib/statusColors';
 
+function itemsFromOrder(order: OrderDetail): NewOrderItem[] {
+  return order.items.length > 0
+    ? order.items.map((it) => ({ product: it.product, qty: it.qty, price: it.price }))
+    : [{ product: '', qty: 1, price: 0 }];
+}
+
 export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const router = useRouter();
+
+  const [editing, setEditing] = useState(false);
 
   const [status, setStatus] = useState(order.status);
   const [customerName, setCustomerName] = useState(order.customer);
@@ -17,11 +25,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [confirmedDate, setConfirmedDate] = useState(order.confirmedDate || '');
   const [source, setSource] = useState(order.source || 'Facebook');
   const [priority, setPriority] = useState('Normal');
-  const [items, setItems] = useState<NewOrderItem[]>(
-    order.items.length > 0
-      ? order.items.map((it) => ({ product: it.product, qty: it.qty, price: it.price }))
-      : [{ product: '', qty: 1, price: 0 }]
-  );
+  const [items, setItems] = useState<NewOrderItem[]>(itemsFromOrder(order));
   const [deliveryCharge, setDeliveryCharge] = useState(order.deliveryCharge);
   const [advance, setAdvance] = useState(order.advance);
   const [productNotes, setProductNotes] = useState(order.productNotes);
@@ -31,12 +35,31 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
+  const locked = !editing; // read-only view mode
   const itemsTotal = items.reduce((sum, it) => sum + (it.qty || 0) * (it.price || 0), 0);
   const grandTotal = itemsTotal + (deliveryCharge || 0);
   const due = grandTotal - (advance || 0);
 
   function updateItem(index: number, patch: Partial<NewOrderItem>) {
     setItems(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }
+
+  function handleCancel() {
+    setStatus(order.status);
+    setCustomerName(order.customer);
+    setPhone(order.phone);
+    setAddress(order.address);
+    setInvoice(order.invoice);
+    setDeliveryDate(order.delivery || '');
+    setConfirmedDate(order.confirmedDate || '');
+    setSource(order.source || 'Facebook');
+    setItems(itemsFromOrder(order));
+    setDeliveryCharge(order.deliveryCharge);
+    setAdvance(order.advance);
+    setProductNotes(order.productNotes);
+    setNotes(order.notes);
+    setError('');
+    setEditing(false);
   }
 
   async function handleSave() {
@@ -76,6 +99,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
 
       setSaving(false);
       setSaved(true);
+      setEditing(false);
       router.refresh();
       setTimeout(() => setSaved(false), 2000);
     } catch {
@@ -86,6 +110,17 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
 
   return (
     <section className="panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div className="muted" style={{ fontSize: 13 }}>
+          {locked ? 'View mode — press Edit to make changes.' : 'Editing — remember to Save.'}
+        </div>
+        {locked && (
+          <button className="btn secondary" onClick={() => setEditing(true)}>
+            ✎ Edit
+          </button>
+        )}
+      </div>
+
       {error && (
         <div
           style={{
@@ -104,7 +139,11 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
 
       <div className="field" style={{ marginBottom: 18, maxWidth: 260 }}>
         <label>Status</label>
-        <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as typeof status)}
+          disabled={locked}
+        >
           {ORDER_STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -120,15 +159,15 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       <div className="formgrid">
         <div className="field">
           <label>Customer Name</label>
-          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={locked} />
         </div>
         <div className="field">
           <label>Phone</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={locked} />
         </div>
         <div className="field full">
           <label>Address</label>
-          <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
+          <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} disabled={locked} />
         </div>
       </div>
 
@@ -136,7 +175,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       <div className="formgrid">
         <div className="field">
           <label>Invoice Number (max 6 characters)</label>
-          <input maxLength={6} value={invoice} onChange={(e) => setInvoice(e.target.value)} />
+          <input maxLength={6} value={invoice} onChange={(e) => setInvoice(e.target.value)} disabled={locked} />
         </div>
         <div className="field">
           <label>Order Confirmed Date</label>
@@ -144,6 +183,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             type="date"
             value={confirmedDate}
             onChange={(e) => setConfirmedDate(e.target.value)}
+            disabled={locked}
           />
         </div>
         <div className="field">
@@ -152,11 +192,12 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             type="date"
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
+            disabled={locked}
           />
         </div>
         <div className="field">
           <label>Order Source</label>
-          <select value={source} onChange={(e) => setSource(e.target.value)}>
+          <select value={source} onChange={(e) => setSource(e.target.value)} disabled={locked}>
             <option>Facebook</option>
             <option>WhatsApp</option>
             <option>Call</option>
@@ -167,7 +208,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
         </div>
         <div className="field">
           <label>Priority</label>
-          <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+          <select value={priority} onChange={(e) => setPriority(e.target.value)} disabled={locked}>
             <option>Normal</option>
             <option>Urgent</option>
             <option>Emergency</option>
@@ -176,7 +217,10 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       </div>
 
       <h3 style={{ marginTop: 25 }}>
-        Products <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>Total Qty: {items.reduce((s, it) => s + (it.qty || 0), 0)}</span>
+        Products{' '}
+        <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>
+          Total Qty: {items.reduce((s, it) => s + (it.qty || 0), 0)}
+        </span>
       </h3>
       {items.map((item, i) => (
         <div
@@ -193,23 +237,30 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             placeholder="Product"
             value={item.product}
             onChange={(e) => updateItem(i, { product: e.target.value })}
+            disabled={locked}
           />
           <input
             type="number"
             placeholder="Qty"
             value={item.qty}
             onChange={(e) => updateItem(i, { qty: Number(e.target.value) })}
+            disabled={locked}
           />
           <input
             type="number"
             placeholder="Unit Price"
             value={item.price}
             onChange={(e) => updateItem(i, { price: Number(e.target.value) })}
+            disabled={locked}
           />
           <div className="muted" style={{ fontSize: 13, textAlign: 'right' }}>
             ৳{((item.qty || 0) * (item.price || 0)).toLocaleString()}
           </div>
-          <button className="btn secondary" onClick={() => setItems(items.filter((_, j) => j !== i))}>
+          <button
+            className="btn secondary"
+            onClick={() => setItems(items.filter((_, j) => j !== i))}
+            disabled={locked}
+          >
             ×
           </button>
         </div>
@@ -217,6 +268,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       <button
         className="btn secondary"
         onClick={() => setItems([...items, { product: '', qty: 1, price: 0 }])}
+        disabled={locked}
       >
         + Add Product
       </button>
@@ -231,6 +283,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           placeholder="Fabric, size breakdown, design notes..."
           value={productNotes}
           onChange={(e) => setProductNotes(e.target.value)}
+          disabled={locked}
         />
       </div>
 
@@ -242,11 +295,17 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             type="number"
             value={deliveryCharge}
             onChange={(e) => setDeliveryCharge(Number(e.target.value))}
+            disabled={locked}
           />
         </div>
         <div className="field">
           <label>Advance</label>
-          <input type="number" value={advance} onChange={(e) => setAdvance(Number(e.target.value))} />
+          <input
+            type="number"
+            value={advance}
+            onChange={(e) => setAdvance(Number(e.target.value))}
+            disabled={locked}
+          />
         </div>
         <div className="field">
           <label>Due (auto)</label>
@@ -259,19 +318,25 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
         </div>
         <div className="field full">
           <label>Notes</label>
-          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={locked} />
         </div>
       </div>
 
       <div className="muted" style={{ marginBottom: 4, fontSize: 14, textAlign: 'right' }}>
-        Grand Total (Products + Delivery): <b style={{ color: '#111827' }}>৳{grandTotal.toLocaleString()}</b>
+        Grand Total (Products + Delivery):{' '}
+        <b style={{ color: '#111827' }}>৳{grandTotal.toLocaleString()}</b>
       </div>
 
-      <div className="actions">
-        <button className="btn" onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
-        </button>
-      </div>
+      {editing && (
+        <div className="actions">
+          <button className="btn secondary" onClick={handleCancel} disabled={saving}>
+            Cancel
+          </button>
+          <button className="btn" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

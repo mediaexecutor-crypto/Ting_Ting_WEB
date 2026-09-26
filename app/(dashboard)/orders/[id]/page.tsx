@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getOrderDetail } from '@/lib/orders';
 import { getOrderFiles } from '@/lib/orderFiles';
 import { getOrderFolder } from '@/lib/orderFolders';
+import { getCurrentUserContext } from '@/lib/auth';
 import OrderEditForm from '@/components/OrderEditForm';
 import OrderFileUpload from '@/components/OrderFileUpload';
 import OrderFilesList from '@/components/OrderFilesList';
@@ -15,13 +16,20 @@ type Props = {
 
 export default async function OrderDetailPage({ params }: Props) {
   const { id } = await params;
-  const [order, files, folder] = await Promise.all([
+  const [order, files, folder, ctx] = await Promise.all([
     getOrderDetail(id),
     getOrderFiles(id),
     getOrderFolder(id),
+    getCurrentUserContext(),
   ]);
 
   if (!order) {
+    notFound();
+  }
+
+  // A SALESPERSON can't view/edit another rep's order, even by guessing
+  // the URL — only the order's own creator or an ADMIN.
+  if (ctx?.role !== 'ADMIN' && order.salespersonId && order.salespersonId !== ctx?.id) {
     notFound();
   }
 
