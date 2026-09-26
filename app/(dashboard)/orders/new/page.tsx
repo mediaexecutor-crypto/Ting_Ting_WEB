@@ -152,40 +152,14 @@ export default function NewOrder() {
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
             />
-  </div>
-  <div className="field">
-  <label>Expected Delivery</label>
-
-  <div style={{ position: 'relative' }}>
-    <input
-      type="text"
-      value={formatDeliveryDate(deliveryDate)}
-      placeholder="DD-MMM-YYYY"
-      readOnly
-      onClick={() => {
-        const picker = document.getElementById('delivery-date-picker');
-        if (picker) {
-          (picker as HTMLInputElement).showPicker?.();
-        }
-      }}
-      style={{ width: '100%', cursor: 'pointer' }}
-    />
-
-    <input
-      id="delivery-date-picker"
-      type="date"
-      value={deliveryDate}
-      onChange={(e) => setDeliveryDate(e.target.value)}
-      style={{
-        position: 'absolute',
-        opacity: 0,
-        width: 1,
-        height: 1,
-        pointerEvents: 'none',
-      }}
-    />
-  </div>
-</div>
+            <div className="field">
+            <label>Expected Delivery</label>
+            <input
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+            />
+          </div>
           <div className="field">
             <label>Order Source</label>
             <select value={source} onChange={(e) => setSource(e.target.value)}>
