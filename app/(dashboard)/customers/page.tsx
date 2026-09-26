@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getCustomersSummary } from '@/lib/customers';
 
 export const dynamic = 'force-dynamic';
@@ -21,9 +22,10 @@ export default async function Customers() {
               <th>Customer</th>
               <th>Phone</th>
               <th>Orders</th>
+              <th>Total Pcs</th>
               <th>Total Sales</th>
-              <th>Outstanding</th>
               <th>Last Order</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -34,14 +36,22 @@ export default async function Customers() {
                 </td>
                 <td>{c.phone}</td>
                 <td>{c.orderCount}</td>
+                <td>{c.totalPcs}</td>
                 <td>৳{c.totalSales.toLocaleString()}</td>
-                <td>৳{c.outstanding.toLocaleString()}</td>
                 <td>{c.lastOrderDate || '—'}</td>
+                <td>
+                  <Link
+                    className="btn secondary"
+                    href={`/orders/new?name=${encodeURIComponent(c.name)}&phone=${encodeURIComponent(c.phone)}&address=${encodeURIComponent(c.address)}`}
+                  >
+                    + New Order
+                  </Link>
+                </td>
               </tr>
             ))}
             {customers.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted" style={{ padding: 20 }}>
+                <td colSpan={7} className="muted" style={{ padding: 20 }}>
                   No customers yet — they appear here automatically once an order is created.
                 </td>
               </tr>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Order } from '@/lib/types';
 import { isOverdue } from '@/lib/date';
+import { statusClassName } from '@/lib/statusColors';
 
 type OrderTableProps = {
   orders?: Order[];
@@ -55,7 +56,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
             <td>৳{o.due.toLocaleString()}</td>
 
             <td>
-              <span className="status">{o.status}</span>
+              <span className={statusClassName(o.status)}>{o.status}</span>
             </td>
           </tr>
         ))}

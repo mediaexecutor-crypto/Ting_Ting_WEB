@@ -47,9 +47,10 @@ export type CustomerSummary = {
   id: string;
   name: string;
   phone: string;
+  address: string;
   orderCount: number;
   totalSales: number;
-  outstanding: number;
+  totalPcs: number;
   lastOrderDate: string;
 };
 
@@ -58,11 +59,12 @@ export async function getCustomersSummary(): Promise<CustomerSummary[]> {
       id,
       name,
       phone,
+      address,
       orders (
         total_amount,
-        due_amount,
         status,
-        order_date
+        order_date,
+        order_items ( quantity )
       )
     `);
 
@@ -80,9 +82,10 @@ export async function getCustomersSummary(): Promise<CustomerSummary[]> {
         (sum: number, o: any) => sum + Number(o.total_amount ?? 0),
         0
       );
-      const outstanding = activeOrders
-        .filter((o: any) => o.status !== 'DELIVERED')
-        .reduce((sum: number, o: any) => sum + Number(o.due_amount ?? 0), 0);
+      const totalPcs = activeOrders.reduce((sum: number, o: any) => {
+        const items = o.order_items ?? [];
+        return sum + items.reduce((s: number, it: any) => s + Number(it.quantity ?? 0), 0);
+      }, 0);
       const lastOrderDate = orders.reduce(
         (latest: string, o: any) => (o.order_date > latest ? o.order_date : latest),
         ''
@@ -92,9 +95,10 @@ export async function getCustomersSummary(): Promise<CustomerSummary[]> {
         id: c.id,
         name: c.name,
         phone: c.phone,
+        address: c.address ?? '',
         orderCount: orders.length,
         totalSales,
-        outstanding,
+        totalPcs,
         lastOrderDate,
       };
     })

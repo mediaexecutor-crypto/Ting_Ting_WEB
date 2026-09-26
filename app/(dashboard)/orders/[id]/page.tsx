@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 import { getOrderDetail } from '@/lib/orders';
 import { getOrderFiles } from '@/lib/orderFiles';
 import { getOrderFolder } from '@/lib/orderFolders';
-import { isOverdue } from '@/lib/date';
+import OrderEditForm from '@/components/OrderEditForm';
 import OrderFileUpload from '@/components/OrderFileUpload';
+import OrderFilesList from '@/components/OrderFilesList';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,99 +32,18 @@ export default async function OrderDetailPage({ params }: Props) {
           <div className="title">{order!.invoice || 'No Invoice'}</div>
           <div className="muted">{order!.customer}</div>
         </div>
-        <Link className="btn secondary" href="/orders">
-          ← Back to Orders
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link className="btn secondary" href={`/invoice/${id}`} target="_blank">
+            View Invoice
+          </Link>
+          <Link className="btn secondary" href="/orders">
+            ← Back to Orders
+          </Link>
+        </div>
       </div>
 
       <div className="grid2">
-        <section className="panel">
-          <h3>Order Info</h3>
-          <table className="table">
-            <tbody>
-              <tr>
-                <td className="muted">Status</td>
-                <td>
-                  <span className="status">{order!.status}</span>
-                </td>
-              </tr>
-              <tr>
-                <td className="muted">Phone</td>
-                <td>{order!.phone}</td>
-              </tr>
-              <tr>
-                <td className="muted">Address</td>
-                <td>{order!.address || '—'}</td>
-              </tr>
-              <tr>
-                <td className="muted">Delivery Date</td>
-                <td>
-                  {order!.delivery || '—'}
-                  {order!.delivery && isOverdue(order!.delivery, order!.status) && (
-                    <span style={{ color: '#b42318', fontWeight: 700, marginLeft: 8 }}>
-                      OVERDUE
-                    </span>
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <td className="muted">Source</td>
-                <td>{order!.source || '—'}</td>
-              </tr>
-              <tr>
-                <td className="muted">Products Total</td>
-                <td>৳{order!.amount.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td className="muted">Delivery Charge</td>
-                <td>৳{order!.deliveryCharge.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td className="muted">Advance Paid</td>
-                <td>৳{order!.advance.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td className="muted">Due</td>
-                <td>
-                  <b>৳{order!.due.toLocaleString()}</b>
-                </td>
-              </tr>
-              {order!.notes && (
-                <tr>
-                  <td className="muted">Notes</td>
-                  <td>{order!.notes}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          <h3 style={{ marginTop: 22 }}>Products</h3>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Unit Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order!.items.map((it) => (
-                <tr key={it.id}>
-                  <td>{it.product}</td>
-                  <td>{it.qty}</td>
-                  <td>৳{it.price.toLocaleString()}</td>
-                </tr>
-              ))}
-              {order!.items.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="muted">
-                    No products listed.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </section>
+        <OrderEditForm order={order!} />
 
         <section className="panel">
           <h3>Files</h3>
@@ -142,29 +62,7 @@ export default async function OrderDetailPage({ params }: Props) {
           <OrderFileUpload orderId={id} />
 
           <div style={{ marginTop: 16 }}>
-            {files.map((f) => (
-              <div
-                key={f.id}
-                style={{
-                  padding: '10px 0',
-                  borderBottom: '1px solid #edf0f3',
-                }}
-              >
-                <a href={f.fileUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>
-                  {f.fileName}
-                </a>
-                {f.note && (
-                  <div className="muted" style={{ fontSize: 12 }}>
-                    {f.note}
-                  </div>
-                )}
-              </div>
-            ))}
-            {files.length === 0 && (
-              <div className="muted" style={{ fontSize: 13 }}>
-                No files uploaded yet.
-              </div>
-            )}
+            <OrderFilesList orderId={id} files={files} />
           </div>
         </section>
       </div>

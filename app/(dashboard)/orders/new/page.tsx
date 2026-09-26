@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewOrderItem } from '@/lib/types';
 
@@ -22,6 +22,33 @@ export default function NewOrder() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Prefill from a Customers-page "+ New Order" link (?name=&phone=&address=).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qName = params.get('name');
+    const qPhone = params.get('phone');
+    const qAddress = params.get('address');
+    if (qName) setCustomerName(qName);
+    if (qPhone) setPhone(qPhone);
+    if (qAddress) setAddress(qAddress);
+  }, []);
+
+  // Typing a phone number that already belongs to a saved customer
+  // auto-fills their name and address.
+  async function handlePhoneBlur() {
+    if (!phone.trim()) return;
+    try {
+      const res = await fetch(`/api/customers/lookup?phone=${encodeURIComponent(phone.trim())}`);
+      const data = await res.json();
+      if (data.customer) {
+        setCustomerName(data.customer.name ?? '');
+        setAddress(data.customer.address ?? '');
+      }
+    } catch {
+      // Non-critical — the person can just type it in manually.
+    }
+  }
 
   const itemsTotal = items.reduce((sum, it) => sum + (it.qty || 0) * (it.price || 0), 0);
   const grandTotal = itemsTotal + (deliveryCharge || 0);
@@ -107,7 +134,7 @@ export default function NewOrder() {
           </div>
           <div className="field">
             <label>Phone</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={handlePhoneBlur} />
           </div>
           <div className="field full">
             <label>Address</label>

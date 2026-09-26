@@ -66,6 +66,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       driveFileId: uploaded.id,
       fileName: displayName,
       fileUrl: uploaded.webViewLink,
+      thumbnailUrl: uploaded.thumbnailLink,
       note,
     });
 

@@ -125,7 +125,7 @@ export async function uploadFileToDrive(
   ]);
 
   const res = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,thumbnailLink',
     {
       method: 'POST',
       headers: {
@@ -140,5 +140,16 @@ export async function uploadFileToDrive(
     throw new Error(`Failed to upload file to Drive: ${await res.text()}`);
   }
 
-  return res.json() as Promise<{ id: string; webViewLink: string }>;
+  return res.json() as Promise<{ id: string; webViewLink: string; thumbnailLink?: string }>;
+}
+
+export async function deleteFileFromDrive(accessToken: string, fileId: string) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  // 404 just means it's already gone — fine either way.
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Failed to delete Drive file: ${await res.text()}`);
+  }
 }
