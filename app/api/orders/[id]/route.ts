@@ -18,7 +18,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const ctx = await getCurrentUserContext();
-  if (ctx?.role !== 'ADMIN' && order.salesperson_id && order.salesperson_id !== ctx?.id) {
+  if (order.salesperson_id && order.salesperson_id !== ctx?.id) {
     return NextResponse.json({ error: 'Not authorized to edit this order.' }, { status: 403 });
   }
 

@@ -29,7 +29,7 @@ export default async function OrderDetailPage({ params }: Props) {
 
   // A SALESPERSON can't view/edit another rep's order, even by guessing
   // the URL — only the order's own creator or an ADMIN.
-  if (ctx?.role !== 'ADMIN' && order.salespersonId && order.salespersonId !== ctx?.id) {
+  if (order.salespersonId && order.salespersonId !== ctx?.id) {
     notFound();
   }
 

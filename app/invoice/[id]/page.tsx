@@ -17,7 +17,7 @@ export default async function InvoicePage({ params }: Props) {
     notFound();
   }
 
-  if (ctx?.role !== 'ADMIN' && order.salespersonId && order.salespersonId !== ctx?.id) {
+  if (order.salespersonId && order.salespersonId !== ctx?.id) {
     notFound();
   }
 

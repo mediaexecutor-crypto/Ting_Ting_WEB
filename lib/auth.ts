@@ -6,11 +6,9 @@ export type UserContext = {
   role: 'ADMIN' | 'SALESPERSON';
 };
 
-// Who's viewing, and their role — ADMIN sees everything, SALESPERSON
-// only sees their own orders/customers. Reads the session cookie
-// (already validated by proxy.ts middleware for this request) and looks
-// up the role via the service-role client (profiles has no client-side
-// read policy issue either way since this never reaches the browser).
+// Who's viewing, and their role. Reads the session cookie (already
+// validated by proxy.ts middleware for this request) and looks up the
+// role via the service-role client.
 export async function getCurrentUserContext(): Promise<UserContext | null> {
   const supabase = await createClient();
   const {
@@ -32,8 +30,8 @@ export async function getCurrentUserContext(): Promise<UserContext | null> {
 }
 
 // Convenience for pages that only need "which salesperson_id to filter
-// by, if any" — null/undefined means no filter (ADMIN, sees everything).
+// by". Everyone — ADMIN included — only sees orders/customers they
+// created themselves; there's no cross-visibility role anymore.
 export function scopeFilter(ctx: UserContext | null): string | undefined {
-  if (!ctx) return undefined;
-  return ctx.role === 'ADMIN' ? undefined : ctx.id;
+  return ctx?.id;
 }
