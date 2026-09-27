@@ -1,5 +1,5 @@
 import { getDeliveryQueue } from '@/lib/orders';
-import { isOverdue } from '@/lib/date';
+import { isOverdue, formatDate } from '@/lib/date';
 import { statusClassName } from '@/lib/statusColors';
 import CopyDeliveryButton from '@/components/CopyDeliveryButton';
 import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
@@ -42,7 +42,7 @@ export default async function Deliveries() {
                 <td>{o.address || '—'}</td>
                 <td>৳{o.due.toLocaleString()}</td>
                 <td>
-                  {o.delivery || '—'}
+                  {o.delivery ? formatDate(o.delivery) : '—'}
                   {o.delivery && isOverdue(o.delivery, o.status) && (
                     <div style={{ color: '#b42318', fontWeight: 700 }}>OVERDUE</div>
                   )}

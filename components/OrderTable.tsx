@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Order } from '@/lib/types';
-import { isOverdue } from '@/lib/date';
+import { isOverdue, formatDate } from '@/lib/date';
 import { statusClassName } from '@/lib/statusColors';
 
 type OrderTableProps = {
@@ -26,7 +26,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
         {orders.map((o) => (
           <tr key={o.id}>
             <td>
-              <Link href={`/orders/${o.id}`} style={{ fontWeight: 700 }}>
+              <Link href={`/orders/${o.id}`} style={{ fontWeight: 700, color: '#1d4ed8' }}>
                 {o.invoice || 'No Invoice'}
               </Link>
             </td>
@@ -36,7 +36,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
             <td>{o.phone}</td>
 
             <td>
-              {o.delivery}
+              {formatDate(o.delivery)}
 
               {isOverdue(o.delivery, o.status) && (
                 <div

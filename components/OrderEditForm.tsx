@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { OrderDetail } from '@/lib/orders';
 import { ORDER_STATUSES, NewOrderItem } from '@/lib/types';
 import { statusClassName } from '@/lib/statusColors';
-import { isOverdue } from '@/lib/date';
+import { isOverdue, formatDate } from '@/lib/date';
 
 function itemsFromOrder(order: OrderDetail): NewOrderItem[] {
   return order.items.length > 0
@@ -143,12 +143,12 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             </tr>
             <tr>
               <td className="muted">Order Confirmed Date</td>
-              <td>{order.confirmedDate || '—'}</td>
+              <td>{order.confirmedDate ? formatDate(order.confirmedDate) : '—'}</td>
             </tr>
             <tr>
               <td className="muted">Delivery Date</td>
               <td>
-                {order.delivery || '—'}
+                {order.delivery ? formatDate(order.delivery) : '—'}
                 {order.delivery && isOverdue(order.delivery, order.status) && (
                   <span style={{ color: '#b42318', fontWeight: 700, marginLeft: 8 }}>OVERDUE</span>
                 )}

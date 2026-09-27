@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { OrderDetail } from '@/lib/orders';
+import { formatDate } from '@/lib/date';
 
 export default function InvoiceView({ order }: { order: OrderDetail }) {
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -54,7 +55,7 @@ export default function InvoiceView({ order }: { order: OrderDetail }) {
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: 1 }}>INVOICE</div>
             <div className="muted" style={{ fontSize: 13 }}>{order.invoice || 'No Invoice'}</div>
-            {order.orderDate && <div className="muted" style={{ fontSize: 13 }}>{order.orderDate}</div>}
+            {order.orderDate && <div className="muted" style={{ fontSize: 13 }}>{formatDate(order.orderDate)}</div>}
           </div>
         </div>
 
