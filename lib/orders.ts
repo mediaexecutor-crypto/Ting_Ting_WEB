@@ -282,6 +282,7 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
       invoice,
       customer_id: customerId,
       delivery_date: payload.deliveryDate || null,
+      confirmed_date: payload.confirmedDate || null,
       source: payload.source,
       priority: payload.priority,
       status: 'NEW',
@@ -289,6 +290,7 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
       delivery_charge: deliveryCharge,
       advance,
       due_amount: dueAmount,
+      product_notes: payload.productNotes,
       notes: payload.notes,
       salesperson_id: salespersonId,
     })

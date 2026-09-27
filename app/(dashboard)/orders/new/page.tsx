@@ -11,6 +11,7 @@ export default function NewOrder() {
   const [address, setAddress] = useState('');
   const [invoice, setInvoice] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
+  const [confirmedDate, setConfirmedDate] = useState('');
   const [source, setSource] = useState('Facebook');
   const [priority, setPriority] = useState('Normal');
   const [items, setItems] = useState<NewOrderItem[]>([
@@ -18,6 +19,7 @@ export default function NewOrder() {
   ]);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [advance, setAdvance] = useState(0);
+  const [productNotes, setProductNotes] = useState('');
   const [notes, setNotes] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -72,11 +74,13 @@ export default function NewOrder() {
           address,
           invoice,
           deliveryDate,
+          confirmedDate,
           source,
           priority,
           items,
           deliveryCharge,
           advance,
+          productNotes,
           notes,
         }),
       });
@@ -151,6 +155,14 @@ export default function NewOrder() {
               maxLength={6}
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label>Order Confirmed Date</label>
+            <input
+              type="date"
+              value={confirmedDate}
+              onChange={(e) => setConfirmedDate(e.target.value)}
             />
           </div>
           <div className="field">
@@ -234,6 +246,16 @@ export default function NewOrder() {
           style={{ marginTop: 12, fontSize: 14, textAlign: 'right' }}
         >
           Products Total: <b style={{ color: '#111827' }}>৳{itemsTotal.toLocaleString()}</b>
+        </div>
+
+        <div className="field" style={{ marginTop: 16 }}>
+          <label>Product Details Note</label>
+          <textarea
+            rows={2}
+            placeholder="Fabric, size breakdown, design notes..."
+            value={productNotes}
+            onChange={(e) => setProductNotes(e.target.value)}
+          />
         </div>
 
         <h3 style={{ marginTop: 25 }}>Payment</h3>

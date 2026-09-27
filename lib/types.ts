@@ -50,10 +50,12 @@ export type NewOrderPayload = {
   address: string;
   invoice: string;
   deliveryDate: string;
+  confirmedDate: string;
   source: string;
   priority: string;
   items: NewOrderItem[];
   deliveryCharge: number;
   advance: number;
+  productNotes: string;
   notes: string;
 };
