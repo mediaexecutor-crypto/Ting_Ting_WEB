@@ -1,5 +1,6 @@
 import { getAllGoogleAccounts } from '@/lib/googleAccount';
 import { getDriveTargets } from '@/lib/driveTargets';
+import { getCurrentUserContext } from '@/lib/auth';
 import DriveTargetsManager from '@/components/DriveTargetsManager';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,12 @@ type Props = {
 export default async function DrivePage({ searchParams }: Props) {
   const { drive_connected, drive_error } = await searchParams;
 
-  const [accounts, targets] = await Promise.all([getAllGoogleAccounts(), getDriveTargets()]);
+  const ctx = await getCurrentUserContext();
+  const userId = ctx?.id ?? '';
+  const [accounts, targets] = await Promise.all([
+    getAllGoogleAccounts(userId),
+    getDriveTargets(userId),
+  ]);
 
   return (
     <>
@@ -58,10 +64,11 @@ export default async function DrivePage({ searchParams }: Props) {
       <section className="panel">
         <h3>Google Drive</h3>
         <p className="muted" style={{ marginTop: -8, marginBottom: 16, fontSize: 13 }}>
-          Every teammate can connect their own Google account. New order folders are always
-          created in whichever destination below is marked <b>Active</b> — switching active
-          destinations, or removing one, never removes or hides folders/files already created
-          under it.
+          This is personal to your account — connect your own Google Drive here. When you create
+          an order, its folder goes into whichever destination below is marked <b>Active</b> for
+          you; other teammates' connections and active choice are completely separate from
+          yours. Switching active destinations, or removing one, never removes or hides
+          folders/files already created under it.
         </p>
 
         <DriveTargetsManager targets={targets} accounts={accounts} />

@@ -71,31 +71,16 @@ export async function saveGoogleAccount(
       .eq('google_account_id', accountId);
 
     if (!count) {
-      await addDriveTarget(accountId, email, '');
+      await addDriveTarget(accountId, email, '', userId);
     }
   }
 }
 
-export async function getConnectedGoogleAccount(): Promise<GoogleAccount | null> {
+export async function getAllGoogleAccounts(userId: string): Promise<GoogleAccount[]> {
   const { data, error } = await supabaseAdmin
     .from('google_accounts')
     .select('id, email')
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Failed to look up Google account:', error);
-    throw error;
-  }
-
-  return data;
-}
-
-export async function getAllGoogleAccounts(): Promise<GoogleAccount[]> {
-  const { data, error } = await supabaseAdmin
-    .from('google_accounts')
-    .select('id, email')
+    .eq('user_id', userId)
     .order('created_at', { ascending: true });
 
   if (error) {

@@ -4,6 +4,7 @@ import { getValidAccessToken } from '@/lib/googleAccount';
 import { uploadFileToDrive } from '@/lib/googleDrive';
 import { addOrderFile } from '@/lib/orderFiles';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getCurrentUserContext } from '@/lib/auth';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: orderId } = await params;
@@ -33,11 +34,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     `Order ${orderId}`;
 
   try {
-    const folder = await getOrCreateOrderFolder(orderId, folderName);
+    const ctx = await getCurrentUserContext();
+    const folder = await getOrCreateOrderFolder(orderId, folderName, ctx?.id ?? null);
 
     if (!folder) {
       return NextResponse.json(
-        { error: 'No Google Drive account connected yet. Connect it in Settings first.' },
+        { error: 'No Google Drive account connected yet. Connect it on the Drive page first.' },
         { status: 400 }
       );
     }

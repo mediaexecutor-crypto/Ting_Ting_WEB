@@ -33,17 +33,22 @@ export async function getOrderFolder(orderId: string): Promise<OrderFolder | nul
 }
 
 // Creates the order's Drive folder if it doesn't exist yet, inside
-// whichever Drive target is currently marked active. Returns null
-// (instead of throwing) when nothing is connected yet, so callers like
-// order creation can skip Drive entirely without failing the order.
+// whichever Drive target is currently active FOR THIS USER (each
+// teammate's connections/active choice are independent). Returns null
+// (instead of throwing) when this user has nothing connected yet, so
+// callers like order creation can skip Drive entirely without failing
+// the order.
 export async function getOrCreateOrderFolder(
   orderId: string,
-  folderName: string
+  folderName: string,
+  userId: string | null
 ): Promise<OrderFolder | null> {
   const existing = await getOrderFolder(orderId);
   if (existing) return existing;
 
-  const target = await getActiveDriveTarget();
+  if (!userId) return null;
+
+  const target = await getActiveDriveTarget(userId);
   if (!target) return null;
 
   const accessToken = await getValidAccessToken(target.googleAccountId);

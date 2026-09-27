@@ -317,7 +317,7 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
     const folderName = [payload.customerName.trim(), payload.phone.trim()]
       .filter(Boolean)
       .join(' - ') || `Order ${order.id.slice(0, 8)}`;
-    await getOrCreateOrderFolder(order.id, folderName);
+    await getOrCreateOrderFolder(order.id, folderName, salespersonId);
   } catch (err) {
     console.error('Order created, but Drive folder creation failed:', err);
   }

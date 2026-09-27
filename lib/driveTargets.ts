@@ -21,43 +21,7 @@ export function extractFolderId(urlOrId: string): string | null {
   return null;
 }
 
-export async function getDriveTargets(): Promise<DriveTarget[]> {
-  const { data, error } = await supabaseAdmin
-    .from('drive_targets')
-    .select('id, google_account_id, label, parent_folder_id, parent_folder_url, is_active, created_at, google_accounts ( email )')
-    .order('created_at', { ascending: true });
-
-  if (error) {
-    console.error('Failed to fetch Drive targets:', error);
-    throw error;
-  }
-
-  return (data ?? []).map((t: any) => ({
-    id: t.id,
-    googleAccountId: t.google_account_id,
-    accountEmail: t.google_accounts?.email ?? '',
-    label: t.label,
-    parentFolderId: t.parent_folder_id,
-    parentFolderUrl: t.parent_folder_url,
-    isActive: t.is_active,
-    createdAt: t.created_at,
-  }));
-}
-
-export async function getActiveDriveTarget(): Promise<DriveTarget | null> {
-  const { data, error } = await supabaseAdmin
-    .from('drive_targets')
-    .select('id, google_account_id, label, parent_folder_id, parent_folder_url, is_active, created_at, google_accounts ( email )')
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Failed to fetch active Drive target:', error);
-    throw error;
-  }
-  if (!data) return null;
-
-  const t: any = data;
+function mapRow(t: any): DriveTarget {
   return {
     id: t.id,
     googleAccountId: t.google_account_id,
@@ -70,16 +34,57 @@ export async function getActiveDriveTarget(): Promise<DriveTarget | null> {
   };
 }
 
-// Adds a new target and makes it the active one. Existing targets are
-// kept (never deleted) so old order folders stay correctly linked.
+// Every Drive connection/target is personal — each teammate only sees
+// and manages the ones tied to Google accounts THEY connected. One
+// person's active target never affects anyone else's.
+export async function getDriveTargets(userId: string): Promise<DriveTarget[]> {
+  const { data, error } = await supabaseAdmin
+    .from('drive_targets')
+    .select(
+      'id, google_account_id, label, parent_folder_id, parent_folder_url, is_active, created_at, google_accounts!inner ( email, user_id )'
+    )
+    .eq('google_accounts.user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch Drive targets:', error);
+    throw error;
+  }
+
+  return (data ?? []).map(mapRow);
+}
+
+export async function getActiveDriveTarget(userId: string): Promise<DriveTarget | null> {
+  const { data, error } = await supabaseAdmin
+    .from('drive_targets')
+    .select(
+      'id, google_account_id, label, parent_folder_id, parent_folder_url, is_active, created_at, google_accounts!inner ( email, user_id )'
+    )
+    .eq('google_accounts.user_id', userId)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to fetch active Drive target:', error);
+    throw error;
+  }
+  if (!data) return null;
+
+  return mapRow(data);
+}
+
+// Adds a new target and makes it the active one for this user. Existing
+// targets (this user's or anyone else's) are kept — never deleted — so
+// old order folders stay correctly linked.
 export async function addDriveTarget(
   googleAccountId: string,
   label: string,
-  parentFolderUrlOrId: string
+  parentFolderUrlOrId: string,
+  userId: string
 ) {
   const parentFolderId = parentFolderUrlOrId ? extractFolderId(parentFolderUrlOrId) : null;
 
-  await supabaseAdmin.from('drive_targets').update({ is_active: false }).eq('is_active', true);
+  await deactivateAllForUser(userId);
 
   const { error } = await supabaseAdmin.from('drive_targets').insert({
     google_account_id: googleAccountId,
@@ -95,8 +100,8 @@ export async function addDriveTarget(
   }
 }
 
-export async function setActiveDriveTarget(id: string) {
-  await supabaseAdmin.from('drive_targets').update({ is_active: false }).eq('is_active', true);
+export async function setActiveDriveTarget(id: string, userId: string) {
+  await deactivateAllForUser(userId);
 
   const { error } = await supabaseAdmin
     .from('drive_targets')
@@ -109,11 +114,12 @@ export async function setActiveDriveTarget(id: string) {
   }
 }
 
-// Removes a target from the list (does not touch already-created order
-// folders/files — those keep referencing their google_account_id
+// Removes a target from this user's list (does not touch already-created
+// order folders/files — those keep referencing their google_account_id
 // directly, so nothing existing breaks). If the removed target was
-// active, the next-oldest remaining target (if any) becomes active.
-export async function deleteDriveTarget(id: string) {
+// active, the next-oldest remaining target of THIS user (if any)
+// becomes active.
+export async function deleteDriveTarget(id: string, userId: string) {
   const { data: target, error: findError } = await supabaseAdmin
     .from('drive_targets')
     .select('is_active')
@@ -132,15 +138,20 @@ export async function deleteDriveTarget(id: string) {
   }
 
   if (target?.is_active) {
-    const { data: next } = await supabaseAdmin
-      .from('drive_targets')
-      .select('id')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (next) {
-      await supabaseAdmin.from('drive_targets').update({ is_active: true }).eq('id', next.id);
+    const remaining = await getDriveTargets(userId);
+    if (remaining.length > 0) {
+      await supabaseAdmin
+        .from('drive_targets')
+        .update({ is_active: true })
+        .eq('id', remaining[0].id);
     }
+  }
+}
+
+async function deactivateAllForUser(userId: string) {
+  const existing = await getDriveTargets(userId);
+  const activeIds = existing.filter((t) => t.isActive).map((t) => t.id);
+  if (activeIds.length > 0) {
+    await supabaseAdmin.from('drive_targets').update({ is_active: false }).in('id', activeIds);
   }
 }
