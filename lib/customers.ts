@@ -43,6 +43,33 @@ export async function findOrCreateCustomer(
   return created.id as string;
 }
 
+// Blocks deletion if the customer has any orders (data safety) — delete
+// or reassign those first. Returns a friendly error instead of letting
+// the DB foreign-key violation bubble up.
+export async function deleteCustomer(customerId: string) {
+  const { count, error: countError } = await supabaseAdmin
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('customer_id', customerId);
+
+  if (countError) {
+    console.error('Failed to check customer orders:', countError);
+    throw countError;
+  }
+
+  if (count && count > 0) {
+    throw new Error(
+      `This customer has ${count} order${count === 1 ? '' : 's'}. Delete those orders first.`
+    );
+  }
+
+  const { error } = await supabaseAdmin.from('customers').delete().eq('id', customerId);
+  if (error) {
+    console.error('Failed to delete customer:', error);
+    throw error;
+  }
+}
+
 export type CustomerSummary = {
   id: string;
   name: string;

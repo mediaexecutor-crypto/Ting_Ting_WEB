@@ -7,6 +7,7 @@ import { getCurrentUserContext } from '@/lib/auth';
 import OrderEditForm from '@/components/OrderEditForm';
 import OrderFileUpload from '@/components/OrderFileUpload';
 import OrderFilesList from '@/components/OrderFilesList';
+import DeleteOrderButton from '@/components/DeleteOrderButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,8 +28,8 @@ export default async function OrderDetailPage({ params }: Props) {
     notFound();
   }
 
-  // A SALESPERSON can't view/edit another rep's order, even by guessing
-  // the URL — only the order's own creator or an ADMIN.
+  // Only the order's own creator can view/edit/delete it (orders with
+  // no owner yet — created before this feature — stay open to everyone).
   if (order.salespersonId && order.salespersonId !== ctx?.id) {
     notFound();
   }
@@ -47,6 +48,7 @@ export default async function OrderDetailPage({ params }: Props) {
           <Link className="btn secondary" href="/orders">
             ← Back to Orders
           </Link>
+          <DeleteOrderButton orderId={id} invoice={order!.invoice} />
         </div>
       </div>
 

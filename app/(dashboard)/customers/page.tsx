@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getCustomersSummary } from '@/lib/customers';
 import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
+import DeleteCustomerButton from '@/components/DeleteCustomerButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,13 +42,14 @@ export default async function Customers() {
                 <td>{c.totalPcs}</td>
                 <td>৳{c.totalSales.toLocaleString()}</td>
                 <td>{c.lastOrderDate || '—'}</td>
-                <td>
+                <td style={{ display: 'flex', gap: 8 }}>
                   <Link
                     className="btn secondary"
                     href={`/orders/new?name=${encodeURIComponent(c.name)}&phone=${encodeURIComponent(c.phone)}&address=${encodeURIComponent(c.address)}`}
                   >
                     + New Order
                   </Link>
+                  <DeleteCustomerButton id={c.id} name={c.name} />
                 </td>
               </tr>
             ))}

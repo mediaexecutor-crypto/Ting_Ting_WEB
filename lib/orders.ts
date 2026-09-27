@@ -247,6 +247,16 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
   }
 }
 
+// Cascades (order_items, order_files, google_drive_folders, etc.) are
+// all "on delete cascade" in the schema, so this is the only query needed.
+export async function deleteOrder(orderId: string) {
+  const { error } = await supabaseAdmin.from('orders').delete().eq('id', orderId);
+  if (error) {
+    console.error('Failed to delete order:', error);
+    throw error;
+  }
+}
+
 export async function createOrder(payload: NewOrderPayload, salespersonId: string | null) {
   const customerId = await findOrCreateCustomer(
     payload.customerName,

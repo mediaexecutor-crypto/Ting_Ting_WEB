@@ -1,7 +1,34 @@
 import { NextResponse } from 'next/server';
-import { updateOrder } from '@/lib/orders';
+import { updateOrder, deleteOrder } from '@/lib/orders';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getCurrentUserContext } from '@/lib/auth';
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: orderId } = await params;
+
+  const { data: order, error: findError } = await supabaseAdmin
+    .from('orders')
+    .select('salesperson_id')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (findError || !order) {
+    return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
+  }
+
+  const ctx = await getCurrentUserContext();
+  if (order.salesperson_id && order.salesperson_id !== ctx?.id) {
+    return NextResponse.json({ error: 'Not authorized to delete this order.' }, { status: 403 });
+  }
+
+  try {
+    await deleteOrder(orderId);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Order delete failed:', error);
+    return NextResponse.json({ error: 'Something went wrong while deleting.' }, { status: 500 });
+  }
+}
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: orderId } = await params;
