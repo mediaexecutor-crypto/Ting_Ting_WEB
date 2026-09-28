@@ -1,27 +1,47 @@
 import { Order } from './types';
+import { shiftMonth, currentMonthStr } from './calendar';
 
-export type ReportStats = {
-  totalOrders: number;
-  totalRevenue: number;
-  totalOutstanding: number;
-  avgOrderValue: number;
-  bySource: { source: string; count: number; revenue: number }[];
-  byStatus: { status: string; count: number }[];
-  monthlyRevenue: { month: string; label: string; revenue: number }[];
+export type MonthRow = {
+  month: string; // YYYY-MM
+  short: string; // 'Sep'
+  orders: number;
+  pcs: number;
+  revenue: number;
 };
 
-export function computeReportStats(orders: Order[]): ReportStats {
-  const activeOrders = orders.filter((o) => o.status !== 'CANCELLED');
+export type ReportStats = {
+  month: string;
+  monthOrders: number;
+  monthPcs: number;
+  monthRevenue: number;
+  monthAvg: number;
+  monthOutstanding: number;
+  bySource: { source: string; count: number; revenue: number }[];
+  byStatus: { status: string; count: number }[];
+  months: MonthRow[]; // last 12 months, oldest first
+  noConfirmDateCount: number;
+};
 
-  const totalOrders = activeOrders.length;
-  const totalRevenue = activeOrders.reduce((sum, o) => sum + o.amount, 0);
-  const totalOutstanding = activeOrders
+// Everything is counted by the order's CONFIRMED date (not created date).
+// Orders without a confirmed date aren't placed in any month — they're
+// tallied separately so it's clear why totals might look short.
+export function computeReportStats(orders: Order[], month: string): ReportStats {
+  const active = orders.filter((o) => o.status !== 'CANCELLED');
+  const confirmed = active.filter((o) => o.confirmedDate);
+  const noConfirmDateCount = active.length - confirmed.length;
+
+  const thisMonth = confirmed.filter((o) => o.confirmedDate.slice(0, 7) === month);
+
+  const monthOrders = thisMonth.length;
+  const monthPcs = thisMonth.reduce((s, o) => s + o.totalQty, 0);
+  const monthRevenue = thisMonth.reduce((s, o) => s + o.amount, 0);
+  const monthAvg = monthOrders > 0 ? monthRevenue / monthOrders : 0;
+  const monthOutstanding = thisMonth
     .filter((o) => o.status !== 'DELIVERED')
-    .reduce((sum, o) => sum + o.due, 0);
-  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    .reduce((s, o) => s + o.due, 0);
 
   const sourceMap = new Map<string, { count: number; revenue: number }>();
-  for (const o of activeOrders) {
+  for (const o of thisMonth) {
     const key = o.source || 'Unknown';
     const entry = sourceMap.get(key) ?? { count: 0, revenue: 0 };
     entry.count += 1;
@@ -33,44 +53,34 @@ export function computeReportStats(orders: Order[]): ReportStats {
     .sort((a, b) => b.revenue - a.revenue);
 
   const statusMap = new Map<string, number>();
-  for (const o of orders) {
-    statusMap.set(o.status, (statusMap.get(o.status) ?? 0) + 1);
-  }
-  const byStatus = Array.from(statusMap.entries()).map(([status, count]) => ({
-    status,
-    count,
-  }));
+  for (const o of thisMonth) statusMap.set(o.status, (statusMap.get(o.status) ?? 0) + 1);
+  const byStatus = Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
 
-  // Last 6 months, oldest first
-  const now = new Date();
-  const months: { month: string; label: string }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  const months: MonthRow[] = [];
+  const nowMonth = currentMonthStr();
+  for (let i = 11; i >= 0; i--) {
+    const m = shiftMonth(nowMonth, -i);
+    const [y, mm] = m.split('-').map(Number);
+    const inMonth = confirmed.filter((o) => o.confirmedDate.slice(0, 7) === m);
     months.push({
-      month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-      label: d.toLocaleDateString('en-US', { month: 'short' }),
+      month: m,
+      short: new Date(y, mm - 1, 1).toLocaleDateString('en-US', { month: 'short' }),
+      orders: inMonth.length,
+      pcs: inMonth.reduce((s, o) => s + o.totalQty, 0),
+      revenue: inMonth.reduce((s, o) => s + o.amount, 0),
     });
   }
 
-  const revenueByMonth = new Map<string, number>();
-  for (const o of activeOrders) {
-    if (!o.orderDate) continue;
-    const key = o.orderDate.slice(0, 7);
-    revenueByMonth.set(key, (revenueByMonth.get(key) ?? 0) + o.amount);
-  }
-
-  const monthlyRevenue = months.map((m) => ({
-    ...m,
-    revenue: revenueByMonth.get(m.month) ?? 0,
-  }));
-
   return {
-    totalOrders,
-    totalRevenue,
-    totalOutstanding,
-    avgOrderValue,
+    month,
+    monthOrders,
+    monthPcs,
+    monthRevenue,
+    monthAvg,
+    monthOutstanding,
     bySource,
     byStatus,
-    monthlyRevenue,
+    months,
+    noConfirmDateCount,
   };
 }

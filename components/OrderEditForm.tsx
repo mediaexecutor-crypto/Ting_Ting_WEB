@@ -27,6 +27,8 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [confirmedDate, setConfirmedDate] = useState(order.confirmedDate || '');
   const [source, setSource] = useState(order.source || 'Facebook');
   const [priority, setPriority] = useState('Normal');
+  const [alternativeNumber, setAlternativeNumber] = useState(order.alternativeNumber);
+  const [orderType, setOrderType] = useState(order.orderType);
   const [items, setItems] = useState<NewOrderItem[]>(itemsFromOrder(order));
   const [deliveryCharge, setDeliveryCharge] = useState(order.deliveryCharge);
   const [advance, setAdvance] = useState(order.advance);
@@ -49,6 +51,8 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
     setStatus(order.status);
     setCustomerName(order.customer);
     setPhone(order.phone);
+    setAlternativeNumber(order.alternativeNumber);
+    setOrderType(order.orderType);
     setAddress(order.address);
     setInvoice(order.invoice);
     setDeliveryDate(order.delivery || '');
@@ -75,6 +79,8 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
         body: JSON.stringify({
           customerName,
           phone,
+          alternativeNumber,
+          orderType,
           address,
           invoice,
           deliveryDate,
@@ -139,6 +145,10 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
               <td>{order.phone || '—'}</td>
             </tr>
             <tr>
+              <td className="muted">Alternative Number</td>
+              <td>{order.alternativeNumber || '—'}</td>
+            </tr>
+            <tr>
               <td className="muted">Address</td>
               <td>{order.address || '—'}</td>
             </tr>
@@ -158,6 +168,10 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             <tr>
               <td className="muted">Source</td>
               <td>{order.source || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Order Type</td>
+              <td>{order.orderType || '—'}</td>
             </tr>
             <tr>
               <td className="muted">Products Total</td>
@@ -276,6 +290,10 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           <label>Phone</label>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
+        <div className="field">
+          <label>Alternative Number</label>
+          <input value={alternativeNumber} onChange={(e) => setAlternativeNumber(e.target.value)} />
+        </div>
         <div className="field full">
           <label>Address</label>
           <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
@@ -313,6 +331,14 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             <option>Normal</option>
             <option>Urgent</option>
             <option>Emergency</option>
+          </select>
+        </div>
+        <div className="field">
+          <label>Order Type</label>
+          <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
+            <option value="">— Not set —</option>
+            <option>Organic Customer</option>
+            <option>Ad Customer</option>
           </select>
         </div>
       </div>

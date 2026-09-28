@@ -1,15 +1,25 @@
+import Link from 'next/link';
 import { getOrders } from '@/lib/orders';
-import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 import { computeReportStats } from '@/lib/reports';
+import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
+import { shiftMonth, monthLabel, currentMonthStr } from '@/lib/calendar';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ReportsPage() {
+type Props = {
+  searchParams: Promise<{ month?: string }>;
+};
+
+export default async function ReportsPage({ searchParams }: Props) {
+  const { month } = await searchParams;
+  const monthStr = month && /^\d{4}-\d{2}$/.test(month) ? month : currentMonthStr();
+
   const ctx = await getCurrentUserContext();
   const orders = await getOrders(scopeFilter(ctx));
-  const stats = computeReportStats(orders);
+  const stats = computeReportStats(orders, monthStr);
 
-  const maxMonthly = Math.max(1, ...stats.monthlyRevenue.map((m) => m.revenue));
+  const last6 = stats.months.slice(-6);
+  const maxMonthly = Math.max(1, ...last6.map((m) => m.revenue));
   const maxSource = Math.max(1, ...stats.bySource.map((s) => s.revenue));
 
   return (
@@ -17,53 +27,80 @@ export default async function ReportsPage() {
       <div className="top">
         <div>
           <div className="title">Reports</div>
-          <div className="muted">Sales performance and breakdowns</div>
+          <div className="muted">Monthly report — counted by order confirmed date</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Link className="btn secondary" href={`/reports?month=${shiftMonth(monthStr, -1)}`}>
+            ← Prev
+          </Link>
+          <div style={{ fontWeight: 700, minWidth: 150, textAlign: 'center' }}>
+            {monthLabel(monthStr)}
+          </div>
+          <Link className="btn secondary" href={`/reports?month=${shiftMonth(monthStr, 1)}`}>
+            Next →
+          </Link>
         </div>
       </div>
 
       <div className="cards">
         <div className="card">
-          <div className="muted">Total Orders</div>
-          <div className="n">{stats.totalOrders}</div>
+          <div className="muted">Orders Confirmed</div>
+          <div className="n">{stats.monthOrders}</div>
         </div>
         <div className="card">
-          <div className="muted">Total Revenue</div>
-          <div className="n">৳{stats.totalRevenue.toLocaleString()}</div>
+          <div className="muted">Total Pcs</div>
+          <div className="n">{stats.monthPcs}</div>
+        </div>
+        <div className="card">
+          <div className="muted">Revenue</div>
+          <div className="n">৳{stats.monthRevenue.toLocaleString()}</div>
         </div>
         <div className="card">
           <div className="muted">Outstanding Due</div>
-          <div className="n">৳{stats.totalOutstanding.toLocaleString()}</div>
+          <div className="n">৳{stats.monthOutstanding.toLocaleString()}</div>
         </div>
         <div className="card">
           <div className="muted">Avg Order Value</div>
-          <div className="n">৳{Math.round(stats.avgOrderValue).toLocaleString()}</div>
+          <div className="n">৳{Math.round(stats.monthAvg).toLocaleString()}</div>
         </div>
       </div>
+
+      {stats.noConfirmDateCount > 0 && (
+        <div className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
+          {stats.noConfirmDateCount} order{stats.noConfirmDateCount === 1 ? ' has' : 's have'} no
+          confirmed date yet, so {stats.noConfirmDateCount === 1 ? "it isn't" : "they aren't"}{' '}
+          counted in any month.
+        </div>
+      )}
 
       <div className="grid2">
         <section className="panel">
           <h3>Revenue — Last 6 Months</h3>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 160 }}>
-            {stats.monthlyRevenue.map((m) => (
-              <div key={m.month} style={{ flex: 1, textAlign: 'center' }}>
+            {last6.map((m) => (
+              <Link
+                key={m.month}
+                href={`/reports?month=${m.month}`}
+                style={{ flex: 1, textAlign: 'center' }}
+                title={`৳${m.revenue.toLocaleString()} · ${m.orders} orders · ${m.pcs} pcs`}
+              >
                 <div
-                  title={`৳${m.revenue.toLocaleString()}`}
                   style={{
                     height: Math.max(4, (m.revenue / maxMonthly) * 130),
-                    background: '#111827',
+                    background: m.month === monthStr ? '#1d4ed8' : '#111827',
                     borderRadius: '6px 6px 0 0',
                   }}
                 />
                 <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                  {m.label}
+                  {m.short}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
 
         <section className="panel">
-          <h3>Orders by Status</h3>
+          <h3>Orders by Status — {monthLabel(monthStr)}</h3>
           <div className="pipeline" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
             {stats.byStatus.map((s) => (
               <div className="pill" key={s.status}>
@@ -71,12 +108,45 @@ export default async function ReportsPage() {
                 <b>{s.count}</b>
               </div>
             ))}
+            {stats.byStatus.length === 0 && (
+              <div className="muted" style={{ fontSize: 13 }}>
+                No orders confirmed this month.
+              </div>
+            )}
           </div>
         </section>
       </div>
 
       <section className="panel" style={{ marginTop: 18 }}>
-        <h3>Revenue by Order Source</h3>
+        <h3>Monthly Summary — Last 12 Months</h3>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Orders</th>
+              <th>Total Pcs</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...stats.months].reverse().map((m) => (
+              <tr key={m.month} style={m.month === monthStr ? { background: '#eff6ff' } : undefined}>
+                <td>
+                  <Link href={`/reports?month=${m.month}`} style={{ color: '#1d4ed8', fontWeight: 700 }}>
+                    {monthLabel(m.month)}
+                  </Link>
+                </td>
+                <td>{m.orders}</td>
+                <td>{m.pcs}</td>
+                <td>৳{m.revenue.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="panel" style={{ marginTop: 18 }}>
+        <h3>Revenue by Order Source — {monthLabel(monthStr)}</h3>
         <table className="table">
           <thead>
             <tr>
@@ -107,7 +177,7 @@ export default async function ReportsPage() {
             {stats.bySource.length === 0 && (
               <tr>
                 <td colSpan={4} className="muted" style={{ padding: 20 }}>
-                  No orders yet.
+                  No orders confirmed this month.
                 </td>
               </tr>
             )}

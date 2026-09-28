@@ -2,27 +2,30 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewOrderItem } from '@/lib/types';
+import FileDropzone, { PendingFile } from '@/components/FileDropzone';
 
 export default function NewOrder() {
   const router = useRouter();
 
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
+  const [alternativeNumber, setAlternativeNumber] = useState('');
   const [address, setAddress] = useState('');
   const [invoice, setInvoice] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [confirmedDate, setConfirmedDate] = useState('');
+  const [orderType, setOrderType] = useState('');
   const [source, setSource] = useState('Facebook');
   const [priority, setPriority] = useState('Normal');
-  const [items, setItems] = useState<NewOrderItem[]>([
-    { product: '', qty: 1, price: 0 },
-  ]);
+  const [items, setItems] = useState<NewOrderItem[]>([{ product: '', qty: 1, price: 0 }]);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [advance, setAdvance] = useState(0);
   const [productNotes, setProductNotes] = useState('');
   const [notes, setNotes] = useState('');
+  const [files, setFiles] = useState<PendingFile[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
+  const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
 
   // Prefill from a Customers-page "+ New Order" link (?name=&phone=&address=).
@@ -63,6 +66,7 @@ export default function NewOrder() {
   async function handleSubmit() {
     setError('');
     setSubmitting(true);
+    setProgress('');
 
     try {
       const res = await fetch('/api/orders', {
@@ -71,10 +75,12 @@ export default function NewOrder() {
         body: JSON.stringify({
           customerName,
           phone,
+          alternativeNumber,
           address,
           invoice,
           deliveryDate,
           confirmedDate,
+          orderType,
           source,
           priority,
           items,
@@ -93,7 +99,33 @@ export default function NewOrder() {
         return;
       }
 
-      router.push('/orders');
+      const orderId: string = data.id;
+
+      // The order (and its Drive folder) now exist — upload any selected
+      // files straight into that folder, one at a time.
+      const failed: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        setProgress(`Uploading files ${i + 1}/${files.length}...`);
+        const formData = new FormData();
+        formData.append('file', f.file);
+        formData.append('name', f.name);
+        try {
+          const up = await fetch(`/api/orders/${orderId}/files`, { method: 'POST', body: formData });
+          if (!up.ok) failed.push(f.file.name);
+        } catch {
+          failed.push(f.file.name);
+        }
+      }
+
+      if (failed.length > 0) {
+        alert(
+          `Order created, but these files didn't upload:\n${failed.join('\n')}\n\nYou can retry from the order's page.`
+        );
+        router.push(`/orders/${orderId}`);
+      } else {
+        router.push('/orders');
+      }
       router.refresh();
     } catch {
       setError('Network error — please try again.');
@@ -138,7 +170,18 @@ export default function NewOrder() {
           </div>
           <div className="field">
             <label>Phone</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={handlePhoneBlur} />
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              onBlur={handlePhoneBlur}
+            />
+          </div>
+          <div className="field">
+            <label>Alternative Number</label>
+            <input
+              value={alternativeNumber}
+              onChange={(e) => setAlternativeNumber(e.target.value)}
+            />
           </div>
           <div className="field full">
             <label>Address</label>
@@ -192,9 +235,22 @@ export default function NewOrder() {
               <option>Emergency</option>
             </select>
           </div>
+          <div className="field">
+            <label>Order Type</label>
+            <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
+              <option value="">— Not set —</option>
+              <option>Organic Customer</option>
+              <option>Ad Customer</option>
+            </select>
+          </div>
         </div>
 
-        <h3 style={{ marginTop: 25 }}>Products</h3>
+        <h3 style={{ marginTop: 25 }}>
+          Products{' '}
+          <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>
+            Total Qty: {items.reduce((s, it) => s + (it.qty || 0), 0)}
+          </span>
+        </h3>
         {items.map((item, i) => (
           <div
             key={i}
@@ -241,10 +297,7 @@ export default function NewOrder() {
           + Add Product
         </button>
 
-        <div
-          className="muted"
-          style={{ marginTop: 12, fontSize: 14, textAlign: 'right' }}
-        >
+        <div className="muted" style={{ marginTop: 12, fontSize: 14, textAlign: 'right' }}>
           Products Total: <b style={{ color: '#111827' }}>৳{itemsTotal.toLocaleString()}</b>
         </div>
 
@@ -291,20 +344,24 @@ export default function NewOrder() {
           </div>
         </div>
 
-        <div
-          className="muted"
-          style={{ marginTop: 4, marginBottom: 4, fontSize: 14, textAlign: 'right' }}
-        >
+        <div className="muted" style={{ marginTop: 4, marginBottom: 4, fontSize: 14, textAlign: 'right' }}>
           Grand Total (Products + Delivery):{' '}
           <b style={{ color: '#111827' }}>৳{grandTotal.toLocaleString()}</b>
         </div>
 
+        <h3 style={{ marginTop: 25 }}>Files</h3>
+        <p className="muted" style={{ fontSize: 12, marginTop: -8, marginBottom: 10 }}>
+          Optional. Files are uploaded into the order's Drive folder as soon as the order is
+          created.
+        </p>
+        <FileDropzone items={files} onChange={setFiles} disabled={submitting} />
+
         <div className="actions">
-          <button className="btn secondary" onClick={() => router.push('/orders')}>
+          <button className="btn secondary" onClick={() => router.push('/orders')} disabled={submitting}>
             Cancel
           </button>
           <button className="btn" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? 'Creating...' : 'Create Order'}
+            {submitting ? progress || 'Creating...' : 'Create Order'}
           </button>
         </div>
       </section>

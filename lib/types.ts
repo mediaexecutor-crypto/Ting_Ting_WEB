@@ -36,6 +36,8 @@ export type Order = {
   due: number;
   status: OrderStatus;
   salespersonId: string | null;
+  confirmedDate: string;
+  totalQty: number;
 };
 
 export type NewOrderItem = {
@@ -47,10 +49,12 @@ export type NewOrderItem = {
 export type NewOrderPayload = {
   customerName: string;
   phone: string;
+  alternativeNumber: string;
   address: string;
   invoice: string;
   deliveryDate: string;
   confirmedDate: string;
+  orderType: string;
   source: string;
   priority: string;
   items: NewOrderItem[];

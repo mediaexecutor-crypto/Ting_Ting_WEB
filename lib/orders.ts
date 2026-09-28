@@ -18,6 +18,8 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
       due_amount,
       status,
       salesperson_id,
+      confirmed_date,
+      order_items ( quantity ),
       customers (
         name,
         phone,
@@ -52,6 +54,11 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
     salespersonId: order.salesperson_id ?? null,
+    confirmedDate: order.confirmed_date ?? '',
+    totalQty: (order.order_items ?? []).reduce(
+      (s: number, it: any) => s + Number(it.quantity ?? 0),
+      0
+    ),
   }));
 }
 
@@ -81,6 +88,8 @@ export type OrderDetail = Order & {
   notes: string;
   confirmedDate: string;
   productNotes: string;
+  alternativeNumber: string;
+  orderType: string;
 };
 
 // Returns the order's salesperson_id only (cheap check used to enforce
@@ -111,6 +120,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       status,
       notes,
       product_notes,
+      alternative_number,
+      order_type,
       customer_id,
       salesperson_id,
       customers ( name, phone, address ),
@@ -147,6 +158,12 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     salespersonId: order.salesperson_id ?? null,
     notes: order.notes ?? '',
     productNotes: order.product_notes ?? '',
+    alternativeNumber: order.alternative_number ?? '',
+    orderType: order.order_type ?? '',
+    totalQty: (order.order_items ?? []).reduce(
+      (s: number, it: any) => s + Number(it.quantity ?? 0),
+      0
+    ),
     items: (order.order_items ?? []).map((it: any) => ({
       id: it.id,
       product: it.product_name,
@@ -159,10 +176,12 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
 export type UpdateOrderPayload = {
   customerName: string;
   phone: string;
+  alternativeNumber: string;
   address: string;
   invoice: string;
   deliveryDate: string;
   confirmedDate: string;
+  orderType: string;
   source: string;
   priority: string;
   status: OrderStatus;
@@ -200,6 +219,8 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
       invoice,
       delivery_date: payload.deliveryDate || null,
       confirmed_date: payload.confirmedDate || null,
+      alternative_number: payload.alternativeNumber?.trim() || null,
+      order_type: payload.orderType || null,
       source: payload.source,
       priority: payload.priority,
       status: payload.status,
@@ -294,6 +315,8 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
       customer_id: customerId,
       delivery_date: payload.deliveryDate || null,
       confirmed_date: payload.confirmedDate || null,
+      alternative_number: payload.alternativeNumber?.trim() || null,
+      order_type: payload.orderType || null,
       source: payload.source,
       priority: payload.priority,
       status: 'NEW',

@@ -1,84 +1,83 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import FileDropzone, { PendingFile } from './FileDropzone';
 
 export default function OrderFileUpload({ orderId }: { orderId: string }) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [note, setNote] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [items, setItems] = useState<PendingFile[]>([]);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const busy = uploadingId !== null;
 
-  async function handleUpload() {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) {
-      setError('Choose a file first.');
-      return;
-    }
-
-    setError('');
-    setUploading(true);
+  async function uploadOne(item: PendingFile): Promise<boolean> {
+    setUploadingId(item.id);
+    setErrors((e) => {
+      const { [item.id]: _removed, ...rest } = e;
+      return rest;
+    });
 
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('note', note);
+    formData.append('file', item.file);
+    formData.append('name', item.name);
 
     try {
-      const res = await fetch(`/api/orders/${orderId}/files`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
+      const res = await fetch(`/api/orders/${orderId}/files`, { method: 'POST', body: formData });
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(data.error ?? 'Upload failed.');
-        setUploading(false);
-        return;
+        setErrors((e) => ({ ...e, [item.id]: data.error ?? 'Upload failed.' }));
+        setUploadingId(null);
+        return false;
       }
 
-      setNote('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      setUploading(false);
+      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      setItems((prev) => prev.filter((p) => p.id !== item.id));
+      setUploadingId(null);
       router.refresh();
+      return true;
     } catch {
-      setError('Network error — please try again.');
-      setUploading(false);
+      setErrors((e) => ({ ...e, [item.id]: 'Network error — please try again.' }));
+      setUploadingId(null);
+      return false;
+    }
+  }
+
+  // One at a time on purpose: the first upload may create the order's
+  // Drive folder, and parallel uploads could race to create it twice.
+  async function uploadAll() {
+    for (const item of [...items]) {
+      await uploadOne(item);
     }
   }
 
   return (
     <div>
-      {error && (
-        <div
-          style={{
-            background: '#fef3f2',
-            color: '#b42318',
-            border: '1px solid #fecdca',
-            borderRadius: 9,
-            padding: 10,
-            marginBottom: 10,
-            fontSize: 13,
-          }}
-        >
-          {error}
-        </div>
-      )}
-      <input type="file" ref={fileInputRef} style={{ marginBottom: 8, width: '100%' }} />
-      <input
-        placeholder="Rename / note (optional)"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        style={{
-          border: '1px solid #d8dde5',
-          borderRadius: 9,
-          padding: 9,
-          width: '100%',
-          marginBottom: 8,
-        }}
+      <FileDropzone
+        items={items}
+        onChange={setItems}
+        disabled={busy}
+        renderAction={(item) => (
+          <button className="btn" onClick={() => uploadOne(item)} disabled={busy}>
+            {uploadingId === item.id ? 'Uploading...' : 'Upload'}
+          </button>
+        )}
       />
-      <button className="btn" onClick={handleUpload} disabled={uploading} style={{ width: '100%' }}>
-        {uploading ? 'Uploading...' : 'Upload File'}
-      </button>
+
+      {items.map(
+        (item) =>
+          errors[item.id] && (
+            <div key={item.id} style={{ color: '#b42318', fontSize: 12, marginTop: 4 }}>
+              {item.file.name}: {errors[item.id]}
+            </div>
+          )
+      )}
+
+      {items.length > 1 && (
+        <button className="btn" onClick={uploadAll} disabled={busy} style={{ marginTop: 12, width: '100%' }}>
+          {busy ? 'Uploading...' : `Upload All (${items.length})`}
+        </button>
+      )}
     </div>
   );
 }

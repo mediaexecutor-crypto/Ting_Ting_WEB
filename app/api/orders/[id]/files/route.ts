@@ -11,7 +11,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
-  const note = (formData.get('note') as string) || '';
+  // 'name' is the rename field from the uploader; 'note' kept for backward compatibility.
+  const rename = ((formData.get('name') as string) || (formData.get('note') as string) || '').trim();
+  const note = '';
 
   if (!file) {
     return NextResponse.json({ error: 'No file provided.' }, { status: 400 });
@@ -49,8 +51,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // Use the note as the display filename when given (the "rename" the
     // user asked for), keep the original extension.
     const extMatch = file.name.match(/\.[^.]+$/);
-    const displayName = note.trim()
-      ? `${note.trim()}${extMatch ? extMatch[0] : ''}`
+    const displayName = rename
+      ? `${rename}${extMatch ? extMatch[0] : ''}`
       : file.name;
 
     const uploaded = await uploadFileToDrive(
