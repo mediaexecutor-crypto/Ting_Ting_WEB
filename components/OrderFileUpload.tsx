@@ -2,11 +2,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FileDropzone, { PendingFile } from './FileDropzone';
+import { uploadFileToOrder } from '@/lib/clientUpload';
 
 export default function OrderFileUpload({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [items, setItems] = useState<PendingFile[]>([]);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [percent, setPercent] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const busy = uploadingId !== null;
 
@@ -17,30 +19,20 @@ export default function OrderFileUpload({ orderId }: { orderId: string }) {
       return rest;
     });
 
-    const formData = new FormData();
-    formData.append('file', item.file);
-    formData.append('name', item.name);
+    setPercent(0);
+    const result = await uploadFileToOrder(orderId, item.file, item.name, setPercent);
 
-    try {
-      const res = await fetch(`/api/orders/${orderId}/files`, { method: 'POST', body: formData });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setErrors((e) => ({ ...e, [item.id]: data.error ?? 'Upload failed.' }));
-        setUploadingId(null);
-        return false;
-      }
-
-      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-      setItems((prev) => prev.filter((p) => p.id !== item.id));
-      setUploadingId(null);
-      router.refresh();
-      return true;
-    } catch {
-      setErrors((e) => ({ ...e, [item.id]: 'Network error — please try again.' }));
+    if (!result.ok) {
+      setErrors((e) => ({ ...e, [item.id]: result.error }));
       setUploadingId(null);
       return false;
     }
+
+    if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    setItems((prev) => prev.filter((p) => p.id !== item.id));
+    setUploadingId(null);
+    router.refresh();
+    return true;
   }
 
   // One at a time on purpose: the first upload may create the order's
@@ -59,7 +51,7 @@ export default function OrderFileUpload({ orderId }: { orderId: string }) {
         disabled={busy}
         renderAction={(item) => (
           <button className="btn" onClick={() => uploadOne(item)} disabled={busy}>
-            {uploadingId === item.id ? 'Uploading...' : 'Upload'}
+            {uploadingId === item.id ? `Uploading ${percent}%` : 'Upload'}
           </button>
         )}
       />

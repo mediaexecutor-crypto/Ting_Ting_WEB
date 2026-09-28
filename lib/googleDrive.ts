@@ -1,3 +1,5 @@
+import https from 'node:https';
+
 const GOOGLE_CLIENT_ID = (process.env.GOOGLE_CLIENT_ID ?? '').trim();
 const GOOGLE_CLIENT_SECRET = (process.env.GOOGLE_CLIENT_SECRET ?? '').trim();
 const GOOGLE_REDIRECT_URI = (process.env.GOOGLE_REDIRECT_URI ?? '').trim();
@@ -152,4 +154,77 @@ export async function deleteFileFromDrive(accessToken: string, fileId: string) {
   if (!res.ok && res.status !== 404) {
     throw new Error(`Failed to delete Drive file: ${await res.text()}`);
   }
+}
+
+// ---------------------------------------------------------------------
+// Direct-from-browser uploads (no file bytes pass through our server, so
+// Vercel's ~4.5 MB request-body limit doesn't apply).
+//
+// 1. The server starts a Drive "resumable upload session" using the
+//    person's access token and hands the browser only the session URL.
+// 2. The browser PUTs the file straight to that URL.
+// 3. The server then verifies the file in Drive and records it.
+//
+// The session is started with an Origin header so Google allows the
+// browser's cross-origin PUT. Uses node:https because fetch treats
+// Origin as a header we may not be able to set.
+// ---------------------------------------------------------------------
+export function initResumableUpload(
+  accessToken: string,
+  folderId: string,
+  fileName: string,
+  mimeType: string,
+  size: number,
+  origin: string
+): Promise<string> {
+  const body = JSON.stringify({ name: fileName, parents: [folderId] });
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink,thumbnailLink',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Length': Buffer.byteLength(body),
+          'X-Upload-Content-Type': mimeType,
+          'X-Upload-Content-Length': String(size),
+          Origin: origin,
+        },
+      },
+      (res) => {
+        let text = '';
+        res.on('data', (chunk) => (text += chunk));
+        res.on('end', () => {
+          const location = res.headers.location;
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300 && location) {
+            resolve(location);
+          } else {
+            reject(new Error(`Failed to start Drive upload (${res.statusCode}): ${text}`));
+          }
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+export async function getDriveFileMeta(accessToken: string, fileId: string) {
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,webViewLink,thumbnailLink,parents`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to read Drive file: ${await res.text()}`);
+  }
+  return res.json() as Promise<{
+    id: string;
+    name: string;
+    webViewLink: string;
+    thumbnailLink?: string;
+    parents?: string[];
+  }>;
 }

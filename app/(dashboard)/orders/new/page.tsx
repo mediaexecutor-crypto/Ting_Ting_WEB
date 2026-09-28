@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewOrderItem } from '@/lib/types';
 import FileDropzone, { PendingFile } from '@/components/FileDropzone';
+import { uploadFileToOrder } from '@/lib/clientUpload';
 
 export default function NewOrder() {
   const router = useRouter();
@@ -107,15 +108,10 @@ export default function NewOrder() {
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
         setProgress(`Uploading files ${i + 1}/${files.length}...`);
-        const formData = new FormData();
-        formData.append('file', f.file);
-        formData.append('name', f.name);
-        try {
-          const up = await fetch(`/api/orders/${orderId}/files`, { method: 'POST', body: formData });
-          if (!up.ok) failed.push(f.file.name);
-        } catch {
-          failed.push(f.file.name);
-        }
+        const result = await uploadFileToOrder(orderId, f.file, f.name, (pct) =>
+          setProgress(`Uploading files ${i + 1}/${files.length} (${pct}%)...`)
+        );
+        if (!result.ok) failed.push(`${f.file.name} — ${result.error}`);
       }
 
       if (failed.length > 0) {
