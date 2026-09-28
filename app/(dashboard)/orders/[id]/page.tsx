@@ -8,6 +8,8 @@ import OrderEditForm from '@/components/OrderEditForm';
 import OrderFileUpload from '@/components/OrderFileUpload';
 import OrderFilesList from '@/components/OrderFilesList';
 import DeleteOrderButton from '@/components/DeleteOrderButton';
+import OdooContactButton from '@/components/OdooContactButton';
+import { getOdooContactUrl } from '@/lib/odoo';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +36,8 @@ export default async function OrderDetailPage({ params }: Props) {
     notFound();
   }
 
+  const odooUrl = await getOdooContactUrl(order!.customerId);
+
   return (
     <>
       <div className="top">
@@ -42,6 +46,7 @@ export default async function OrderDetailPage({ params }: Props) {
           <div className="muted">{order!.customer}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <OdooContactButton orderId={id} initialUrl={odooUrl} />
           <Link className="btn secondary" href={`/invoice/${id}`} target="_blank">
             View Invoice
           </Link>
