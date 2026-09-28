@@ -5,6 +5,7 @@ import { OrderDetail } from '@/lib/orders';
 import { ORDER_STATUSES, NewOrderItem } from '@/lib/types';
 import { statusClassName } from '@/lib/statusColors';
 import { isOverdue, formatDate } from '@/lib/date';
+import StatusQuickChange from './StatusQuickChange';
 
 function itemsFromOrder(order: OrderDetail): NewOrderItem[] {
   return order.items.length > 0
@@ -126,7 +127,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             <tr>
               <td className="muted">Status</td>
               <td>
-                <span className={statusClassName(order.status)}>{order.status}</span>
+                <StatusQuickChange orderId={order.id} status={order.status} />
               </td>
             </tr>
             <tr>

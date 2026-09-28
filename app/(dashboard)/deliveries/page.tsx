@@ -1,6 +1,6 @@
 import { getDeliveryQueue } from '@/lib/orders';
 import { isOverdue, formatDate } from '@/lib/date';
-import { statusClassName } from '@/lib/statusColors';
+import StatusQuickChange from '@/components/StatusQuickChange';
 import CopyDeliveryButton from '@/components/CopyDeliveryButton';
 import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 
@@ -48,7 +48,7 @@ export default async function Deliveries() {
                   )}
                 </td>
                 <td>
-                  <span className={statusClassName(o.status)}>{o.status}</span>
+                  <StatusQuickChange orderId={o.id} status={o.status} />
                 </td>
                 <td>
                   <CopyDeliveryButton

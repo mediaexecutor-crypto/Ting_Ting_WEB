@@ -247,6 +247,17 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
   }
 }
 
+// Lightweight status-only update — used for quick status changes from
+// the Orders list or order page without opening the full edit form (and
+// without risk of clobbering other fields, unlike updateOrder()).
+export async function updateOrderStatus(orderId: string, status: OrderStatus) {
+  const { error } = await supabaseAdmin.from('orders').update({ status }).eq('id', orderId);
+  if (error) {
+    console.error('Failed to update order status:', error);
+    throw error;
+  }
+}
+
 // Cascades (order_items, order_files, google_drive_folders, etc.) are
 // all "on delete cascade" in the schema, so this is the only query needed.
 export async function deleteOrder(orderId: string) {
