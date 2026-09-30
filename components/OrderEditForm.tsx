@@ -199,7 +199,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             {order.productNotes && (
               <tr>
                 <td className="muted">Product Details Note</td>
-                <td>{order.productNotes}</td>
+                <td style={{ whiteSpace: 'pre-wrap' }}>{order.productNotes}</td>
               </tr>
             )}
           </tbody>

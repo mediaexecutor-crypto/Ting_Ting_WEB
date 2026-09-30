@@ -97,6 +97,13 @@ export default function InvoiceView({ order }: { order: OrderDetail }) {
           </tfoot>
         </table>
 
+        {order.productNotes && (
+          <div style={{ marginBottom: 20 }}>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>PRODUCT DETAILS</div>
+            <div style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{order.productNotes}</div>
+          </div>
+        )}
+
         <div style={{ marginLeft: 'auto', width: '55%' }}>
           <Row label="Products Total" value={order.amount} />
           <Row label="Delivery Charge" value={order.deliveryCharge} />
