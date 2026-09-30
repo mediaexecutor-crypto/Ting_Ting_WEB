@@ -7,6 +7,14 @@ import { statusClassName } from '@/lib/statusColors';
 import { isOverdue, formatDate } from '@/lib/date';
 import StatusQuickChange from './StatusQuickChange';
 
+const PRODUCT_NAMES = ['RNSS', 'RNLS', 'VNSS', 'VNLS', 'Polo-SS', 'PoloLS', 'Shorts'];
+
+function autoGrow(e: React.FormEvent<HTMLTextAreaElement>) {
+  const el = e.currentTarget;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
 function itemsFromOrder(order: OrderDetail): NewOrderItem[] {
   return order.items.length > 0
     ? order.items.map((it) => ({ product: it.product, qty: it.qty, price: it.price }))
@@ -33,7 +41,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [deliveryCharge, setDeliveryCharge] = useState(order.deliveryCharge);
   const [advance, setAdvance] = useState(order.advance);
   const [productNotes, setProductNotes] = useState(order.productNotes);
-  const [notes, setNotes] = useState(order.notes);
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -62,7 +69,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
     setDeliveryCharge(order.deliveryCharge);
     setAdvance(order.advance);
     setProductNotes(order.productNotes);
-    setNotes(order.notes);
     setError('');
     setEditing(false);
   }
@@ -92,7 +98,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           deliveryCharge,
           advance,
           productNotes,
-          notes,
         }),
       });
 
@@ -145,12 +150,12 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
               <td>{order.phone || '—'}</td>
             </tr>
             <tr>
-              <td className="muted">Alternative Number</td>
-              <td>{order.alternativeNumber || '—'}</td>
-            </tr>
-            <tr>
               <td className="muted">Address</td>
               <td>{order.address || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Alternative Number</td>
+              <td>{order.alternativeNumber || '—'}</td>
             </tr>
             <tr>
               <td className="muted">Order Confirmed Date</td>
@@ -195,12 +200,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
               <tr>
                 <td className="muted">Product Details Note</td>
                 <td>{order.productNotes}</td>
-              </tr>
-            )}
-            {order.notes && (
-              <tr>
-                <td className="muted">Notes</td>
-                <td>{order.notes}</td>
               </tr>
             )}
           </tbody>
@@ -290,13 +289,13 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           <label>Phone</label>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
-        <div className="field">
-          <label>Alternative Number</label>
-          <input value={alternativeNumber} onChange={(e) => setAlternativeNumber(e.target.value)} />
-        </div>
         <div className="field full">
           <label>Address</label>
           <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Alternative Number</label>
+          <input value={alternativeNumber} onChange={(e) => setAlternativeNumber(e.target.value)} />
         </div>
       </div>
 
@@ -349,6 +348,11 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           Total Qty: {items.reduce((s, it) => s + (it.qty || 0), 0)}
         </span>
       </h3>
+      <datalist id="product-names">
+        {PRODUCT_NAMES.map((p) => (
+          <option key={p} value={p} />
+        ))}
+      </datalist>
       {items.map((item, i) => (
         <div
           key={i}
@@ -362,13 +366,14 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
         >
           <input
             placeholder="Product"
+            list="product-names"
             value={item.product}
             onChange={(e) => updateItem(i, { product: e.target.value })}
           />
           <input
             type="number"
             placeholder="Qty"
-            value={item.qty}
+            value={item.qty === 0 ? '' : item.qty}
             onChange={(e) => updateItem(i, { qty: Number(e.target.value) })}
           />
           <input
@@ -399,9 +404,10 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
         <label>Product Details Note</label>
         <textarea
           rows={2}
-          placeholder="Fabric, size breakdown, design notes..."
           value={productNotes}
           onChange={(e) => setProductNotes(e.target.value)}
+          onInput={autoGrow}
+          style={{ overflow: 'hidden', resize: 'none' }}
         />
       </div>
 
@@ -431,10 +437,6 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             readOnly
             style={{ background: '#f4f6f8', fontWeight: 700 }}
           />
-        </div>
-        <div className="field full">
-          <label>Notes</label>
-          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
 

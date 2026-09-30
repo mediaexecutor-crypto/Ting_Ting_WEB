@@ -5,6 +5,22 @@ import { NewOrderItem } from '@/lib/types';
 import FileDropzone, { PendingFile } from '@/components/FileDropzone';
 import { uploadFileToOrder } from '@/lib/clientUpload';
 
+const PRODUCT_NAMES = ['RNSS', 'RNLS', 'VNSS', 'VNLS', 'Polo-SS', 'PoloLS', 'Shorts'];
+
+const DEFAULT_PRODUCT_NOTES =
+  'Price: ------------->\nCUFF RIV: -------->\nPlacket: ----------->\nFabric: ------------->\nOthers Note: ---->';
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function autoGrow(e: React.FormEvent<HTMLTextAreaElement>) {
+  const el = e.currentTarget;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
 export default function NewOrder() {
   const router = useRouter();
 
@@ -14,15 +30,14 @@ export default function NewOrder() {
   const [address, setAddress] = useState('');
   const [invoice, setInvoice] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
-  const [confirmedDate, setConfirmedDate] = useState('');
-  const [orderType, setOrderType] = useState('');
-  const [source, setSource] = useState('Facebook');
+  const [confirmedDate, setConfirmedDate] = useState(todayStr());
+  const [orderType, setOrderType] = useState('Ad Customer');
+  const [source, setSource] = useState('WhatsApp');
   const [priority, setPriority] = useState('Normal');
-  const [items, setItems] = useState<NewOrderItem[]>([{ product: '', qty: 1, price: 0 }]);
+  const [items, setItems] = useState<NewOrderItem[]>([{ product: '', qty: 0, price: 0 }]);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [advance, setAdvance] = useState(0);
-  const [productNotes, setProductNotes] = useState('');
-  const [notes, setNotes] = useState('');
+  const [productNotes, setProductNotes] = useState(DEFAULT_PRODUCT_NOTES);
   const [files, setFiles] = useState<PendingFile[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
@@ -88,7 +103,7 @@ export default function NewOrder() {
           deliveryCharge,
           advance,
           productNotes,
-          notes,
+          notes: '',
         }),
       });
 
@@ -172,16 +187,16 @@ export default function NewOrder() {
               onBlur={handlePhoneBlur}
             />
           </div>
+          <div className="field full">
+            <label>Address</label>
+            <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
+          </div>
           <div className="field">
             <label>Alternative Number</label>
             <input
               value={alternativeNumber}
               onChange={(e) => setAlternativeNumber(e.target.value)}
             />
-          </div>
-          <div className="field full">
-            <label>Address</label>
-            <textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
         </div>
 
@@ -247,6 +262,11 @@ export default function NewOrder() {
             Total Qty: {items.reduce((s, it) => s + (it.qty || 0), 0)}
           </span>
         </h3>
+        <datalist id="product-names">
+          {PRODUCT_NAMES.map((p) => (
+            <option key={p} value={p} />
+          ))}
+        </datalist>
         {items.map((item, i) => (
           <div
             key={i}
@@ -260,13 +280,14 @@ export default function NewOrder() {
           >
             <input
               placeholder="Product"
+              list="product-names"
               value={item.product}
               onChange={(e) => updateItem(i, { product: e.target.value })}
             />
             <input
               type="number"
               placeholder="Qty"
-              value={item.qty}
+              value={item.qty === 0 ? '' : item.qty}
               onChange={(e) => updateItem(i, { qty: Number(e.target.value) })}
             />
             <input
@@ -288,7 +309,7 @@ export default function NewOrder() {
         ))}
         <button
           className="btn secondary"
-          onClick={() => setItems([...items, { product: '', qty: 1, price: 0 }])}
+          onClick={() => setItems([...items, { product: '', qty: 0, price: 0 }])}
         >
           + Add Product
         </button>
@@ -300,10 +321,11 @@ export default function NewOrder() {
         <div className="field" style={{ marginTop: 16 }}>
           <label>Product Details Note</label>
           <textarea
-            rows={2}
-            placeholder="Fabric, size breakdown, design notes..."
+            rows={5}
             value={productNotes}
             onChange={(e) => setProductNotes(e.target.value)}
+            onInput={autoGrow}
+            style={{ overflow: 'hidden', resize: 'none' }}
           />
         </div>
 
@@ -333,10 +355,6 @@ export default function NewOrder() {
               readOnly
               style={{ background: '#f4f6f8', fontWeight: 700 }}
             />
-          </div>
-          <div className="field full">
-            <label>Notes</label>
-            <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
         </div>
 
