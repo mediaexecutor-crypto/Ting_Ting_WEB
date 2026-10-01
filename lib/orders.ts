@@ -17,6 +17,7 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
       advance,
       due_amount,
       status,
+      priority,
       salesperson_id,
       confirmed_date,
       order_items ( quantity ),
@@ -53,6 +54,8 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
     advance: Number(order.advance ?? 0),
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
+    priority: order.priority ?? 'Normal',
+    deliveryChargeSet: order.delivery_charge !== null,
     salespersonId: order.salesperson_id ?? null,
     confirmedDate: order.confirmed_date ?? '',
     totalQty: (order.order_items ?? []).reduce(
@@ -118,6 +121,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       advance,
       due_amount,
       status,
+      priority,
       notes,
       product_notes,
       alternative_number,
@@ -155,6 +159,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     advance: Number(order.advance ?? 0),
     due: Number(order.due_amount ?? 0),
     status: order.status as OrderStatus,
+    priority: order.priority ?? 'Normal',
+    deliveryChargeSet: order.delivery_charge !== null,
     salespersonId: order.salesperson_id ?? null,
     notes: order.notes ?? '',
     productNotes: order.product_notes ?? '',
@@ -186,7 +192,7 @@ export type UpdateOrderPayload = {
   priority: string;
   status: OrderStatus;
   items: { product: string; qty: number; price: number }[];
-  deliveryCharge: number;
+  deliveryCharge: number | null;
   advance: number;
   productNotes: string;
   notes: string;
@@ -208,9 +214,9 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
   }
 
   const itemsTotal = payload.items.reduce((sum, item) => sum + item.qty * item.price, 0);
-  const deliveryCharge = payload.deliveryCharge || 0;
+  const deliveryCharge = payload.deliveryCharge; // keep null distinct from 0
   const advance = payload.advance || 0;
-  const dueAmount = itemsTotal + deliveryCharge - advance;
+  const dueAmount = itemsTotal + (deliveryCharge ?? 0) - advance;
   const invoice = payload.invoice.trim().slice(0, 6) || null;
 
   const { error: orderError } = await supabaseAdmin
@@ -297,9 +303,9 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
   );
 
   const itemsTotal = payload.items.reduce((sum, item) => sum + item.qty * item.price, 0);
-  const deliveryCharge = payload.deliveryCharge || 0;
+  const deliveryCharge = payload.deliveryCharge; // keep null distinct from 0
   const advance = payload.advance || 0;
-  const dueAmount = itemsTotal + deliveryCharge - advance;
+  const dueAmount = itemsTotal + (deliveryCharge ?? 0) - advance;
 
   // Invoice is optional and capped at 6 characters. Left blank, it's
   // stored as NULL (not an empty string or an auto-generated value) so

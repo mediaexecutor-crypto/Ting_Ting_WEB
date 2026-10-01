@@ -35,7 +35,7 @@ export default function NewOrder() {
   const [source, setSource] = useState('WhatsApp');
   const [priority, setPriority] = useState('Normal');
   const [items, setItems] = useState<NewOrderItem[]>([{ product: '', qty: 0, price: 0 }]);
-  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [deliveryCharge, setDeliveryCharge] = useState<number | null>(null);
   const [advance, setAdvance] = useState(0);
   const [productNotes, setProductNotes] = useState(DEFAULT_PRODUCT_NOTES);
   const [files, setFiles] = useState<PendingFile[]>([]);
@@ -72,7 +72,7 @@ export default function NewOrder() {
   }
 
   const itemsTotal = items.reduce((sum, it) => sum + (it.qty || 0) * (it.price || 0), 0);
-  const grandTotal = itemsTotal + (deliveryCharge || 0);
+  const grandTotal = itemsTotal + (deliveryCharge ?? 0);
   const due = grandTotal - (advance || 0);
 
   function updateItem(index: number, patch: Partial<NewOrderItem>) {
@@ -335,8 +335,8 @@ export default function NewOrder() {
             <label>Delivery Charge</label>
             <input
               type="number"
-              value={deliveryCharge === 0 ? '' : deliveryCharge}
-              onChange={(e) => setDeliveryCharge(Number(e.target.value))}
+              value={deliveryCharge === null ? '' : deliveryCharge}
+              onChange={(e) => setDeliveryCharge(e.target.value === '' ? null : Number(e.target.value))}
             />
           </div>
           <div className="field">

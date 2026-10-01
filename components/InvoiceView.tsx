@@ -66,7 +66,7 @@ export default function InvoiceView({ order }: { order: OrderDetail }) {
           <div>{order.address}</div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 6 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid #17202a' }}>
               <th style={{ textAlign: 'left', padding: '6px 4px', fontSize: 13 }}>Product</th>
@@ -98,7 +98,7 @@ export default function InvoiceView({ order }: { order: OrderDetail }) {
         </table>
 
         {order.productNotes && (
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 14 }}>
             <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>PRODUCT DETAILS</div>
             <div style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{order.productNotes}</div>
           </div>

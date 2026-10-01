@@ -7,9 +7,17 @@ type Props = {
   phone: string;
   address: string;
   cod: number;
+  deliveryChargeSet: boolean;
 };
 
-export default function CopyDeliveryButton({ invoice, name, phone, address, cod }: Props) {
+export default function CopyDeliveryButton({
+  invoice,
+  name,
+  phone,
+  address,
+  cod,
+  deliveryChargeSet,
+}: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -19,6 +27,7 @@ export default function CopyDeliveryButton({ invoice, name, phone, address, cod 
       `Address: ${address || '—'}`,
       `COD: ৳${cod.toLocaleString()}`,
       `Invoice: ${invoice}`,
+      `DC: ${deliveryChargeSet ? 'Included' : 'Not Included'}`,
     ].join('\n');
 
     try {

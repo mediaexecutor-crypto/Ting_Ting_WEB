@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Order } from '@/lib/types';
-import { isOverdue, formatDate } from '@/lib/date';
+import { formatDate } from '@/lib/date';
+import DeliveryBadge from './DeliveryBadge';
 import StatusQuickChange from './StatusQuickChange';
 
 type OrderTableProps = {
@@ -19,6 +20,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
           <th>Amount</th>
           <th>Due</th>
           <th>Status</th>
+          <th>Priority</th>
         </tr>
       </thead>
 
@@ -37,18 +39,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
 
             <td>
               {formatDate(o.delivery)}
-
-              {isOverdue(o.delivery, o.status) && (
-                <div
-                  style={{
-                    color: '#b42318',
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
-                  OVERDUE
-                </div>
-              )}
+              <DeliveryBadge deliveryDate={o.delivery} status={o.status} />
             </td>
 
             <td>৳{o.amount.toLocaleString()}</td>
@@ -58,6 +49,8 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
             <td>
               <StatusQuickChange orderId={o.id} status={o.status} />
             </td>
+
+            <td>{o.priority}</td>
           </tr>
         ))}
       </tbody>

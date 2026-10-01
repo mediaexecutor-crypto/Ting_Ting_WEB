@@ -1,5 +1,6 @@
 import { getDeliveryQueue } from '@/lib/orders';
-import { isOverdue, formatDate } from '@/lib/date';
+import { formatDate } from '@/lib/date';
+import DeliveryBadge from '@/components/DeliveryBadge';
 import StatusQuickChange from '@/components/StatusQuickChange';
 import CopyDeliveryButton from '@/components/CopyDeliveryButton';
 import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
@@ -43,9 +44,7 @@ export default async function Deliveries() {
                 <td>৳{o.due.toLocaleString()}</td>
                 <td>
                   {o.delivery ? formatDate(o.delivery) : '—'}
-                  {o.delivery && isOverdue(o.delivery, o.status) && (
-                    <div style={{ color: '#b42318', fontWeight: 700 }}>OVERDUE</div>
-                  )}
+                  <DeliveryBadge deliveryDate={o.delivery} status={o.status} />
                 </td>
                 <td>
                   <StatusQuickChange orderId={o.id} status={o.status} />
@@ -57,6 +56,7 @@ export default async function Deliveries() {
                     phone={o.phone}
                     address={o.address}
                     cod={o.due}
+                    deliveryChargeSet={o.deliveryChargeSet}
                   />
                 </td>
               </tr>

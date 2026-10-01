@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { OrderDetail } from '@/lib/orders';
 import { ORDER_STATUSES, NewOrderItem } from '@/lib/types';
 import { statusClassName } from '@/lib/statusColors';
-import { isOverdue, formatDate } from '@/lib/date';
+import { formatDate } from '@/lib/date';
+import DeliveryBadge from './DeliveryBadge';
 import StatusQuickChange from './StatusQuickChange';
 
 const PRODUCT_NAMES = ['RNSS', 'RNLS', 'VNSS', 'VNLS', 'Polo-SS', 'PoloLS', 'Shorts'];
@@ -34,11 +35,13 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [deliveryDate, setDeliveryDate] = useState(order.delivery || '');
   const [confirmedDate, setConfirmedDate] = useState(order.confirmedDate || '');
   const [source, setSource] = useState(order.source || 'Facebook');
-  const [priority, setPriority] = useState('Normal');
+  const [priority, setPriority] = useState(order.priority || 'Normal');
   const [alternativeNumber, setAlternativeNumber] = useState(order.alternativeNumber);
   const [orderType, setOrderType] = useState(order.orderType);
   const [items, setItems] = useState<NewOrderItem[]>(itemsFromOrder(order));
-  const [deliveryCharge, setDeliveryCharge] = useState(order.deliveryCharge);
+  const [deliveryCharge, setDeliveryCharge] = useState<number | null>(
+    order.deliveryChargeSet ? order.deliveryCharge : null
+  );
   const [advance, setAdvance] = useState(order.advance);
   const [productNotes, setProductNotes] = useState(order.productNotes);
 
@@ -47,7 +50,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [error, setError] = useState('');
 
   const itemsTotal = items.reduce((sum, it) => sum + (it.qty || 0) * (it.price || 0), 0);
-  const grandTotal = itemsTotal + (deliveryCharge || 0);
+  const grandTotal = itemsTotal + (deliveryCharge ?? 0);
   const due = grandTotal - (advance || 0);
 
   function updateItem(index: number, patch: Partial<NewOrderItem>) {
@@ -60,13 +63,14 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
     setPhone(order.phone);
     setAlternativeNumber(order.alternativeNumber);
     setOrderType(order.orderType);
+    setPriority(order.priority || 'Normal');
     setAddress(order.address);
     setInvoice(order.invoice);
     setDeliveryDate(order.delivery || '');
     setConfirmedDate(order.confirmedDate || '');
     setSource(order.source || 'Facebook');
     setItems(itemsFromOrder(order));
-    setDeliveryCharge(order.deliveryCharge);
+    setDeliveryCharge(order.deliveryChargeSet ? order.deliveryCharge : null);
     setAdvance(order.advance);
     setProductNotes(order.productNotes);
     setError('');
@@ -165,14 +169,16 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
               <td className="muted">Delivery Date</td>
               <td>
                 {order.delivery ? formatDate(order.delivery) : '—'}
-                {order.delivery && isOverdue(order.delivery, order.status) && (
-                  <span style={{ color: '#b42318', fontWeight: 700, marginLeft: 8 }}>OVERDUE</span>
-                )}
+                <DeliveryBadge deliveryDate={order.delivery} status={order.status} />
               </td>
             </tr>
             <tr>
               <td className="muted">Source</td>
               <td>{order.source || '—'}</td>
+            </tr>
+            <tr>
+              <td className="muted">Priority</td>
+              <td>{order.priority || 'Normal'}</td>
             </tr>
             <tr>
               <td className="muted">Order Type</td>
@@ -417,8 +423,8 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           <label>Delivery Charge</label>
           <input
             type="number"
-            value={deliveryCharge === 0 ? '' : deliveryCharge}
-            onChange={(e) => setDeliveryCharge(Number(e.target.value))}
+            value={deliveryCharge === null ? '' : deliveryCharge}
+            onChange={(e) => setDeliveryCharge(e.target.value === '' ? null : Number(e.target.value))}
           />
         </div>
         <div className="field">
