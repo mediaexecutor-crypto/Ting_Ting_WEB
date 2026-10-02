@@ -65,6 +65,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ uploadUrl });
   } catch (err) {
     console.error('Failed to start upload:', err);
-    return NextResponse.json({ error: 'Could not start the upload. Please try again.' }, { status: 500 });
+    return NextResponse.json({ error: `Could not start the upload: ${err instanceof Error ? err.message : String(err)}` }, { status: 500 });
   }
 }
