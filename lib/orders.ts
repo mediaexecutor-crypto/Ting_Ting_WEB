@@ -9,6 +9,7 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
     .select(`
       id,
       invoice,
+      created_at,
       delivery_date,
       order_date,
       source,
@@ -49,6 +50,7 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
     address: order.customers?.address ?? '',
     delivery: order.delivery_date,
     orderDate: order.order_date,
+    createdAt: order.created_at,
     source: order.source ?? '',
     amount: Number(order.total_amount ?? 0),
     deliveryCharge: Number(order.delivery_charge ?? 0),
