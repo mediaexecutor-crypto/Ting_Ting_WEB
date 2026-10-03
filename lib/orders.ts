@@ -158,6 +158,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     address: order.customers?.address ?? '',
     delivery: order.delivery_date,
     orderDate: order.order_date,
+    createdAt: order.created_at,
     confirmedDate: order.confirmed_date ?? '',
     source: order.source ?? '',
     amount: Number(order.total_amount ?? 0),
