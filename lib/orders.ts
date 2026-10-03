@@ -118,6 +118,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       invoice,
       delivery_date,
       order_date,
+      created_at,
       confirmed_date,
       source,
       total_amount,
