@@ -30,6 +30,15 @@ export default async function Orders({ searchParams }: Props) {
   });
 
 
+console.log(
+  orders.map((o) => ({
+    invoice: o.invoice,
+    status: o.status,
+    orderDate: o.orderDate,
+  }))
+);
+
+  
 orders.sort((a, b) => {
   const aDelivered = a.status === 'DELIVERED' ? 1 : 0;
   const bDelivered = b.status === 'DELIVERED' ? 1 : 0;
