@@ -30,15 +30,6 @@ export default async function Orders({ searchParams }: Props) {
   });
 
 
-console.log(
-  orders.map((o) => ({
-    invoice: o.invoice,
-    status: o.status,
-    orderDate: o.orderDate,
-  }))
-);
-
-  
 orders.sort((a, b) => {
   const aDelivered = a.status === 'DELIVERED' ? 1 : 0;
   const bDelivered = b.status === 'DELIVERED' ? 1 : 0;
@@ -47,7 +38,7 @@ orders.sort((a, b) => {
     return aDelivered - bDelivered;
   }
 
-  return new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime();
+  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 });
   
 
