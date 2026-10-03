@@ -31,13 +31,14 @@ export default async function Orders({ searchParams }: Props) {
 
 
 orders.sort((a, b) => {
-  const aIsDelivered = a.status === 'DELIVERED';
-  const bIsDelivered = b.status === 'DELIVERED';
+  const aDelivered = a.status === 'DELIVERED';
+  const bDelivered = b.status === 'DELIVERED';
 
-  if (aIsDelivered && !bIsDelivered) return 1;
-  if (!aIsDelivered && bIsDelivered) return -1;
+  if (aDelivered !== bDelivered) {
+    return aDelivered ? 1 : -1;
+  }
 
-  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  return a.createdAt.localeCompare(b.createdAt);
 });
   
 
