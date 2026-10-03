@@ -29,6 +29,19 @@ export default async function Orders({ searchParams }: Props) {
     return matchesQuery && matchesStatus;
   });
 
+
+orders.sort((a, b) => {
+  const aDelivered = a.status === 'Delivered' ? 1 : 0;
+  const bDelivered = b.status === 'Delivered' ? 1 : 0;
+
+  if (aDelivered !== bDelivered) {
+    return aDelivered - bDelivered;
+  }
+
+  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+});
+  
+
   return (
     <>
       <div className="top">
