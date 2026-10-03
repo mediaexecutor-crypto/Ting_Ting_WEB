@@ -38,7 +38,7 @@ orders.sort((a, b) => {
     return aDelivered ? 1 : -1;
   }
 
-  return a.createdAt.localeCompare(b.createdAt);
+  return b.createdAt.localeCompare(a.createdAt);
 });
   
 
