@@ -3,6 +3,7 @@ import { formatDate } from '@/lib/date';
 import DeliveryBadge from '@/components/DeliveryBadge';
 import StatusQuickChange from '@/components/StatusQuickChange';
 import CopyDeliveryButton from '@/components/CopyDeliveryButton';
+import CourierQuickChange from '@/components/CourierQuickChange';
 import { getCurrentUserContext, scopeFilter } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,7 @@ export default async function Deliveries() {
               <th>COD</th>
               <th>Delivery</th>
               <th>Status</th>
+              <th>Courier</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -50,6 +52,9 @@ export default async function Deliveries() {
                   <StatusQuickChange orderId={o.id} status={o.status} />
                 </td>
                 <td>
+                  <CourierQuickChange orderId={o.id} courier={o.courier} />
+                </td>
+                <td>
                   <CopyDeliveryButton
                     invoice={o.invoice}
                     name={o.customer}
@@ -63,7 +68,7 @@ export default async function Deliveries() {
             ))}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={8} className="muted" style={{ padding: 20 }}>
+                <td colSpan={9} className="muted" style={{ padding: 20 }}>
                   Nothing here yet — orders show up once they reach Ready status.
                 </td>
               </tr>

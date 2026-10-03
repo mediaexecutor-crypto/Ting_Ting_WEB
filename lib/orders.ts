@@ -18,6 +18,7 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
       due_amount,
       status,
       priority,
+      courier,
       salesperson_id,
       confirmed_date,
       order_items ( quantity ),
@@ -56,6 +57,7 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
     status: order.status as OrderStatus,
     priority: order.priority ?? 'Normal',
     deliveryChargeSet: order.delivery_charge !== null,
+    courier: order.courier ?? '',
     salespersonId: order.salesperson_id ?? null,
     confirmedDate: order.confirmed_date ?? '',
     totalQty: (order.order_items ?? []).reduce(
@@ -122,6 +124,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       due_amount,
       status,
       priority,
+      courier,
       notes,
       product_notes,
       alternative_number,
@@ -161,6 +164,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     status: order.status as OrderStatus,
     priority: order.priority ?? 'Normal',
     deliveryChargeSet: order.delivery_charge !== null,
+    courier: order.courier ?? '',
     salespersonId: order.salesperson_id ?? null,
     notes: order.notes ?? '',
     productNotes: order.product_notes ?? '',
@@ -375,4 +379,12 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
   }
 
   return order.id as string;
+}
+
+export async function updateOrderCourier(orderId: string, courier: string) {
+  const { error } = await supabaseAdmin.from('orders').update({ courier }).eq('id', orderId);
+  if (error) {
+    console.error('Failed to update courier:', error);
+    throw error;
+  }
 }

@@ -3,6 +3,7 @@ import { Order } from '@/lib/types';
 import { formatDate } from '@/lib/date';
 import DeliveryBadge from './DeliveryBadge';
 import StatusQuickChange from './StatusQuickChange';
+import { priorityClassName } from '@/lib/statusColors';
 
 type OrderTableProps = {
   orders?: Order[];
@@ -50,7 +51,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
               <StatusQuickChange orderId={o.id} status={o.status} />
             </td>
 
-            <td>{o.priority}</td>
+            <td><span className={priorityClassName(o.priority)}>{o.priority}</span></td>
           </tr>
         ))}
       </tbody>

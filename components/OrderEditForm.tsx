@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderDetail } from '@/lib/orders';
 import { ORDER_STATUSES, NewOrderItem } from '@/lib/types';
-import { statusClassName } from '@/lib/statusColors';
+import { statusClassName, priorityClassName } from '@/lib/statusColors';
 import { formatDate } from '@/lib/date';
 import DeliveryBadge from './DeliveryBadge';
 import StatusQuickChange from './StatusQuickChange';
@@ -178,7 +178,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             </tr>
             <tr>
               <td className="muted">Priority</td>
-              <td>{order.priority || 'Normal'}</td>
+              <td><span className={priorityClassName(order.priority)}>{order.priority || 'Normal'}</span></td>
             </tr>
             <tr>
               <td className="muted">Order Type</td>

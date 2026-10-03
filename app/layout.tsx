@@ -1,4 +1,5 @@
 import './globals.css';
+import NumberInputWheelFix from '@/components/NumberInputWheelFix';
 
 export const metadata = {
   title: 'CODS OMS',
@@ -7,7 +8,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <NumberInputWheelFix />
+        {children}
+      </body>
     </html>
   );
 }

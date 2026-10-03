@@ -23,6 +23,7 @@ export default function DeliveryBadge({
         background: badge.bg,
         color: badge.color,
       }}
+      className={badge.blink ? 'blink-badge' : undefined}
     >
       {badge.text}
     </div>

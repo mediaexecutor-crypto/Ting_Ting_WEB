@@ -40,6 +40,7 @@ export type Order = {
   salespersonId: string | null;
   confirmedDate: string;
   totalQty: number;
+  courier: string;
 };
 
 export type NewOrderItem = {
