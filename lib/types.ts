@@ -41,6 +41,7 @@ export type Order = {
   confirmedDate: string;
   totalQty: number;
   courier: string;
+  createdAt: string;
 };
 
 export type NewOrderItem = {
