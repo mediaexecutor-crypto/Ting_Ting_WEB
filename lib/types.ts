@@ -63,6 +63,7 @@ export type NewOrderPayload = {
   priority: string;
   items: NewOrderItem[];
   deliveryCharge: number | null;
+  courier: string;
   advance: number;
   productNotes: string;
   notes: string;

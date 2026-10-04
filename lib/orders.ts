@@ -201,6 +201,7 @@ export type UpdateOrderPayload = {
   status: OrderStatus;
   items: { product: string; qty: number; price: number }[];
   deliveryCharge: number | null;
+  courier: string;
   advance: number;
   productNotes: string;
   notes: string;
@@ -244,6 +245,7 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
       due_amount: dueAmount,
       product_notes: payload.productNotes,
       notes: payload.notes,
+      courier: payload.courier,
     })
     .eq('id', orderId);
 
@@ -340,6 +342,7 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
       due_amount: dueAmount,
       product_notes: payload.productNotes,
       notes: payload.notes,
+      courier: payload.courier,
       salesperson_id: salespersonId,
     })
     .select('id')

@@ -6,6 +6,7 @@ import { ORDER_STATUSES, NewOrderItem } from '@/lib/types';
 import { statusClassName, priorityClassName } from '@/lib/statusColors';
 import { formatDate } from '@/lib/date';
 import DeliveryBadge from './DeliveryBadge';
+import CourierQuickChange from './CourierQuickChange';
 import StatusQuickChange from './StatusQuickChange';
 
 const PRODUCT_NAMES = ['RNSS', 'RNLS', 'VNSS', 'VNLS', 'Polo-SS', 'PoloLS', 'Shorts'];
@@ -191,6 +192,12 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
             <tr>
               <td className="muted">Delivery Charge</td>
               <td>৳{order.deliveryCharge.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td className="muted">Courier</td>
+              <td>
+                <CourierQuickChange orderId={order.id} courier={order.courier} compact />
+              </td>
             </tr>
             <tr>
               <td className="muted">Advance Paid</td>

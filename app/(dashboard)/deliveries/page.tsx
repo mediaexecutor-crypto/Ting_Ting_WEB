@@ -52,7 +52,7 @@ export default async function Deliveries() {
                   <StatusQuickChange orderId={o.id} status={o.status} />
                 </td>
                 <td>
-                  <CourierQuickChange orderId={o.id} courier={o.courier} />
+                  <CourierQuickChange orderId={o.id} courier={o.courier} compact />
                 </td>
                 <td>
                   <CopyDeliveryButton

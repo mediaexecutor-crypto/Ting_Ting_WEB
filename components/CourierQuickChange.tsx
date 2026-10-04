@@ -4,7 +4,15 @@ import { useRouter } from 'next/navigation';
 
 const COURIERS = ['Steadfast', 'Sundarban / SA Paribahan', 'Customer Receive', 'Instant Pathao', 'We Deliver'];
 
-export default function CourierQuickChange({ orderId, courier }: { orderId: string; courier: string }) {
+export default function CourierQuickChange({
+  orderId,
+  courier,
+  compact,
+}: {
+  orderId: string;
+  courier: string;
+  compact?: boolean;
+}) {
   const router = useRouter();
   const [value, setValue] = useState(courier);
   const [saving, setSaving] = useState(false);
@@ -32,7 +40,13 @@ export default function CourierQuickChange({ orderId, courier }: { orderId: stri
       value={value}
       disabled={saving}
       onChange={(e) => handleChange(e.target.value)}
-      style={{ border: '1px solid #d8dde5', borderRadius: 7, padding: 6 }}
+      style={{
+        border: '1px solid #d8dde5',
+        borderRadius: 7,
+        padding: 6,
+        maxWidth: compact ? 130 : undefined,
+        fontSize: compact ? 12 : undefined,
+      }}
     >
       <option value="">— Select —</option>
       {COURIERS.map((c) => (

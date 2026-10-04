@@ -36,6 +36,7 @@ export default function NewOrder() {
   const [priority, setPriority] = useState('Normal');
   const [items, setItems] = useState<NewOrderItem[]>([{ product: '', qty: 0, price: 0 }]);
   const [deliveryCharge, setDeliveryCharge] = useState<number | null>(null);
+  const [courier, setCourier] = useState('');
   const [advance, setAdvance] = useState(0);
   const [productNotes, setProductNotes] = useState(DEFAULT_PRODUCT_NOTES);
   const [files, setFiles] = useState<PendingFile[]>([]);
@@ -101,6 +102,7 @@ export default function NewOrder() {
           priority,
           items,
           deliveryCharge,
+          courier,
           advance,
           productNotes,
           notes: '',
@@ -333,11 +335,22 @@ export default function NewOrder() {
         <div className="formgrid">
           <div className="field">
             <label>Delivery Charge</label>
-            <input
-              type="number"
-              value={deliveryCharge === null ? '' : deliveryCharge}
-              onChange={(e) => setDeliveryCharge(e.target.value === '' ? null : Number(e.target.value))}
-            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                type="number"
+                value={deliveryCharge === null ? '' : deliveryCharge}
+                onChange={(e) => setDeliveryCharge(e.target.value === '' ? null : Number(e.target.value))}
+                style={{ flex: 1 }}
+              />
+              <select value={courier} onChange={(e) => setCourier(e.target.value)} style={{ fontSize: 12 }}>
+                <option value="">Courier</option>
+                <option>Steadfast</option>
+                <option>Sundarban / SA Paribahan</option>
+                <option>Customer Receive</option>
+                <option>Instant Pathao</option>
+                <option>We Deliver</option>
+              </select>
+            </div>
           </div>
           <div className="field">
             <label>Advance</label>

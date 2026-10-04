@@ -106,7 +106,7 @@ export default function InvoiceView({ order }: { order: OrderDetail }) {
 
         <div style={{ marginLeft: 'auto', width: '55%' }}>
           <Row label="Products Total" value={order.amount} />
-          <Row label="Delivery Charge" value={order.deliveryCharge} />
+          <Row label={`Delivery Charge${order.courier ? ` (${order.courier})` : ''}`} value={order.deliveryCharge} />
           <Row label="Grand Total" value={order.amount + order.deliveryCharge} bold />
           <Row label="Advance Paid" value={order.advance} />
           <Row label="Due" value={order.due} bold highlight />
