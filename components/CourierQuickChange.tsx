@@ -2,17 +2,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const COURIERS = ['Steadfast', 'Sundarban / SA Paribahan', 'Customer Receive', 'Instant Pathao', 'We Deliver'];
+export const COURIERS = ['Steadfast', 'Sundarban / SA Paribahan', 'Customer Receive', 'Instant Pathao', 'We Deliver'];
 
-export default function CourierQuickChange({
-  orderId,
-  courier,
-  compact,
-}: {
-  orderId: string;
-  courier: string;
-  compact?: boolean;
-}) {
+export default function CourierQuickChange({ orderId, courier }: { orderId: string; courier: string }) {
   const router = useRouter();
   const [value, setValue] = useState(courier);
   const [saving, setSaving] = useState(false);
@@ -41,14 +33,15 @@ export default function CourierQuickChange({
       disabled={saving}
       onChange={(e) => handleChange(e.target.value)}
       style={{
-        border: '1px solid #d8dde5',
-        borderRadius: 7,
-        padding: 6,
-        maxWidth: compact ? 130 : undefined,
-        fontSize: compact ? 12 : undefined,
+        border: 'none',
+        background: 'transparent',
+        fontWeight: 700,
+        cursor: 'pointer',
+        padding: 0,
+        font: 'inherit',
       }}
     >
-      <option value="">— Select —</option>
+      <option value="">courier select</option>
       {COURIERS.map((c) => (
         <option key={c} value={c}>
           {c}

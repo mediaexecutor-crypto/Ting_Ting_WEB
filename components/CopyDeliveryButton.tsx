@@ -28,6 +28,7 @@ export default function CopyDeliveryButton({
       `COD: ৳${cod.toLocaleString()}`,
       `Invoice: ${invoice}`,
       `DC: ${courier ? 'Included' : 'Not Included'}`,
+      `Courier: ${courier || '—'}`,
     ].join('\n');
 
     try {

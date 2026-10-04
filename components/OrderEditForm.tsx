@@ -39,6 +39,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
   const [priority, setPriority] = useState(order.priority || 'Normal');
   const [alternativeNumber, setAlternativeNumber] = useState(order.alternativeNumber);
   const [orderType, setOrderType] = useState(order.orderType);
+  const [courier, setCourier] = useState(order.courier);
   const [items, setItems] = useState<NewOrderItem[]>(itemsFromOrder(order));
   const [deliveryCharge, setDeliveryCharge] = useState<number | null>(
     order.deliveryChargeSet ? order.deliveryCharge : null
@@ -64,6 +65,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
     setPhone(order.phone);
     setAlternativeNumber(order.alternativeNumber);
     setOrderType(order.orderType);
+    setCourier(order.courier);
     setPriority(order.priority || 'Normal');
     setAddress(order.address);
     setInvoice(order.invoice);
@@ -103,6 +105,7 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
           deliveryCharge,
           advance,
           productNotes,
+          courier,
         }),
       });
 
@@ -190,14 +193,10 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
               <td>৳{order.amount.toLocaleString()}</td>
             </tr>
             <tr>
-              <td className="muted">Delivery Charge</td>
-              <td>৳{order.deliveryCharge.toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td className="muted">Courier</td>
-              <td>
-                <CourierQuickChange orderId={order.id} courier={order.courier} compact />
+              <td className="muted">
+                Delivery Charge ( <CourierQuickChange orderId={order.id} courier={order.courier} /> )
               </td>
+              <td>৳{order.deliveryCharge.toLocaleString()}</td>
             </tr>
             <tr>
               <td className="muted">Advance Paid</td>
@@ -427,7 +426,22 @@ export default function OrderEditForm({ order }: { order: OrderDetail }) {
       <h3 style={{ marginTop: 25 }}>Payment</h3>
       <div className="formgrid">
         <div className="field">
-          <label>Delivery Charge</label>
+          <label>
+            Delivery Charge ( courier select{' '}
+            <select
+              value={courier}
+              onChange={(e) => setCourier(e.target.value)}
+              style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, cursor: 'pointer' }}
+            >
+              <option value="">▼</option>
+              <option>Steadfast</option>
+              <option>Sundarban / SA Paribahan</option>
+              <option>Customer Receive</option>
+              <option>Instant Pathao</option>
+              <option>We Deliver</option>
+            </select>
+            )
+          </label>
           <input
             type="number"
             value={deliveryCharge === null ? '' : deliveryCharge}

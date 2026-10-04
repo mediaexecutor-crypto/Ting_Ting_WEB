@@ -334,23 +334,27 @@ export default function NewOrder() {
         <h3 style={{ marginTop: 25 }}>Payment</h3>
         <div className="formgrid">
           <div className="field">
-            <label>Delivery Charge</label>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input
-                type="number"
-                value={deliveryCharge === null ? '' : deliveryCharge}
-                onChange={(e) => setDeliveryCharge(e.target.value === '' ? null : Number(e.target.value))}
-                style={{ flex: 1 }}
-              />
-              <select value={courier} onChange={(e) => setCourier(e.target.value)} style={{ fontSize: 12 }}>
-                <option value="">Courier</option>
+            <label>
+              Delivery Charge ( courier select{' '}
+              <select
+                value={courier}
+                onChange={(e) => setCourier(e.target.value)}
+                style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, cursor: 'pointer' }}
+              >
+                <option value="">▼</option>
                 <option>Steadfast</option>
                 <option>Sundarban / SA Paribahan</option>
                 <option>Customer Receive</option>
                 <option>Instant Pathao</option>
                 <option>We Deliver</option>
               </select>
-            </div>
+              )
+            </label>
+            <input
+              type="number"
+              value={deliveryCharge === null ? '' : deliveryCharge}
+              onChange={(e) => setDeliveryCharge(e.target.value === '' ? null : Number(e.target.value))}
+            />
           </div>
           <div className="field">
             <label>Advance</label>
