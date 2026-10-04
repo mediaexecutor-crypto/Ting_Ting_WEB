@@ -61,7 +61,7 @@ export default async function Deliveries() {
                     phone={o.phone}
                     address={o.address}
                     cod={o.due}
-                    deliveryChargeSet={o.deliveryChargeSet}
+                    courier={o.courier}
                   />
                 </td>
               </tr>
