@@ -82,6 +82,12 @@ export default function NewOrder() {
 
   async function handleSubmit() {
     setError('');
+
+    if (!customerName.trim() || !phone.trim()) {
+      setError('Customer name and phone are required.');
+      return;
+    }
+
     setSubmitting(true);
     setProgress('');
 
@@ -152,7 +158,7 @@ export default function NewOrder() {
         <div>
           <div className="title">Create Order</div>
           <div className="muted">
-            Nothing here is required — fill in what you have now, edit the rest later from the
+            Only name and phone are required — fill in the rest now or edit it later from the
             order's page.
           </div>
         </div>
@@ -178,15 +184,20 @@ export default function NewOrder() {
         <h3>Customer</h3>
         <div className="formgrid">
           <div className="field">
-            <label>Customer Name</label>
-            <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+            <label>Customer Name *</label>
+            <input
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              required
+            />
           </div>
           <div className="field">
-            <label>Phone</label>
+            <label>Phone *</label>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               onBlur={handlePhoneBlur}
+              required
             />
           </div>
           <div className="field full">

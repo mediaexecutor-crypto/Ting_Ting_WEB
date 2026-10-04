@@ -7,6 +7,13 @@ export async function POST(request: Request) {
   const body = (await request.json()) as NewOrderPayload;
   const ctx = await getCurrentUserContext();
 
+  if (!body.customerName?.trim() || !body.phone?.trim()) {
+    return NextResponse.json(
+      { error: 'Customer name and phone are required.' },
+      { status: 400 }
+    );
+  }
+
   try {
     const orderId = await createOrder(body, ctx?.id ?? null);
     return NextResponse.json({ id: orderId }, { status: 201 });
