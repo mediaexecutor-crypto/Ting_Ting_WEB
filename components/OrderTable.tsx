@@ -16,8 +16,8 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
         <tr>
           <th>Invoice</th>
           <th>Customer</th>
-          <th>Confirmed</th>
           <th>Phone</th>
+          <th>Confirmed</th>
           <th>Delivery</th>
           <th>Amount</th>
           <th>Due</th>
