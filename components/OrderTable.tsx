@@ -41,10 +41,10 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
 
             <td>{o.confirmedDate ? formatDate(o.confirmedDate) : '—'}</td>
 
-<td className="flex flex-col items-start gap-1">
-  <span>{formatDate(o.delivery)}</span>
-  <DeliveryBadge deliveryDate={o.delivery} status={o.status} />
-</td>
+            <td>
+              {formatDate(o.delivery)}
+              <DeliveryBadge deliveryDate={o.delivery} status={o.status} />
+            </td>
 
             <td>৳{o.amount.toLocaleString()}</td>
 
