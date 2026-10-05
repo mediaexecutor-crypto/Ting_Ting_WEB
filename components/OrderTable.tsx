@@ -16,6 +16,7 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
         <tr>
           <th>Invoice</th>
           <th>Customer</th>
+          <th>Confirmed</th>
           <th>Phone</th>
           <th>Delivery</th>
           <th>Amount</th>
@@ -35,6 +36,10 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
             </td>
 
             <td>{o.customer}</td>
+
+            <td>{o.confirmedDate ? formatDate(o.confirmedDate) : '—'}</td>
+
+            <td>{o.confirmedDate ? formatDate(o.confirmedDate) : '—'}</td>
 
             <td>{o.phone}</td>
 
