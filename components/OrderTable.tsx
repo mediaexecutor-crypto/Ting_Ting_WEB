@@ -41,8 +41,6 @@ export default function OrderTable({ orders = [] }: OrderTableProps) {
 
             <td>{o.confirmedDate ? formatDate(o.confirmedDate) : '—'}</td>
 
-            <td>{o.confirmedDate ? formatDate(o.confirmedDate) : '—'}</td>
-
             <td>
               {formatDate(o.delivery)}
               <DeliveryBadge deliveryDate={o.delivery} status={o.status} />
