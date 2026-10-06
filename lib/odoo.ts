@@ -116,3 +116,15 @@ export async function ensureOdooContact(customerId: string): Promise<{ url: stri
 
   return { url };
 }
+
+// For a contact already created in Odoo (e.g. by the old system) —
+// just save the link here instead of creating a duplicate contact.
+export async function saveExistingOdooLink(customerId: string, url: string) {
+  const { error } = await supabaseAdmin
+    .from('odoo_contacts')
+    .upsert({ customer_id: customerId, odoo_url: url }, { onConflict: 'customer_id' });
+  if (error) {
+    console.error('Failed to save Odoo link:', error);
+    throw error;
+  }
+}

@@ -11,17 +11,28 @@ type Props = {
 };
 
 export default async function ReportsPage({ searchParams }: Props) {
-  const { month, type } = await searchParams;
+  const { month } = await searchParams;
   const monthStr = month && /^\d{4}-\d{2}$/.test(month) ? month : currentMonthStr();
-  const orderType = type === 'Organic Customer' || type === 'Ad Customer' ? type : '';
 
   const ctx = await getCurrentUserContext();
-  const allOrders = await getOrders(scopeFilter(ctx));
-  const orders = orderType ? allOrders.filter((o) => o.orderType === orderType) : allOrders;
+  const orders = await getOrders(scopeFilter(ctx));
   const stats = computeReportStats(orders, monthStr);
-  const monthOrders = orders
-    .filter((o) => o.confirmedDate.slice(0, 7) === monthStr && o.status !== 'CANCELLED')
-    .sort((a, b) => a.confirmedDate.localeCompare(b.confirmedDate));
+  const monthOrders = orders.filter(
+    (o) => o.confirmedDate.slice(0, 7) === monthStr && o.status !== 'CANCELLED'
+  );
+
+  const byType = new Map<string, { count: number; revenue: number }>();
+  for (const o of monthOrders) {
+    const key = o.orderType || 'Not Set';
+    const e = byType.get(key) ?? { count: 0, revenue: 0 };
+    e.count += 1;
+    e.revenue += o.amount;
+    byType.set(key, e);
+  }
+  const typeRows = Array.from(byType.entries())
+    .map(([orderType, v]) => ({ orderType, ...v }))
+    .sort((a, b) => b.revenue - a.revenue);
+  const maxType = Math.max(1, ...typeRows.map((t) => t.revenue));
 
   const last6 = stats.months.slice(-6);
   const maxMonthly = Math.max(1, ...last6.map((m) => m.revenue));
@@ -46,17 +57,6 @@ export default async function ReportsPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
-
-      <form method="get" style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input type="hidden" name="month" value={monthStr} />
-        <label className="muted" style={{ fontSize: 13 }}>Order Type:</label>
-        <select name="type" defaultValue={orderType}>
-          <option value="">All</option>
-          <option>Organic Customer</option>
-          <option>Ad Customer</option>
-        </select>
-        <button className="btn secondary" type="submit">Filter</button>
-      </form>
 
       <div className="cards">
         <div className="card">
@@ -202,36 +202,38 @@ export default async function ReportsPage({ searchParams }: Props) {
       </section>
 
       <section className="panel" style={{ marginTop: 18 }}>
-        <h3>
-          Orders — {monthLabel(monthStr)}
-          {orderType ? ` · ${orderType}` : ''}
-        </h3>
+        <h3>Orders by Order Type — {monthLabel(monthStr)}</h3>
         <table className="table">
           <thead>
             <tr>
-              <th>Invoice</th>
-              <th>Customer</th>
-              <th>Phone</th>
               <th>Order Type</th>
-              <th>Confirmed</th>
-              <th>Amount</th>
+              <th>Orders</th>
+              <th>Revenue</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {monthOrders.map((o) => (
-              <tr key={o.id}>
-                <td>{o.invoice || 'No Invoice'}</td>
-                <td>{o.customer}</td>
-                <td>{o.phone}</td>
-                <td>{o.orderType || '—'}</td>
-                <td>{o.confirmedDate}</td>
-                <td>৳{o.amount.toLocaleString()}</td>
+            {typeRows.map((t) => (
+              <tr key={t.orderType}>
+                <td>{t.orderType}</td>
+                <td>{t.count}</td>
+                <td>৳{t.revenue.toLocaleString()}</td>
+                <td style={{ width: '35%' }}>
+                  <div
+                    style={{
+                      height: 8,
+                      borderRadius: 4,
+                      background: '#111827',
+                      width: `${Math.max(4, (t.revenue / maxType) * 100)}%`,
+                    }}
+                  />
+                </td>
               </tr>
             ))}
-            {monthOrders.length === 0 && (
+            {typeRows.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted" style={{ padding: 20 }}>
-                  No orders confirmed this month{orderType ? ` for ${orderType}` : ''}.
+                <td colSpan={4} className="muted" style={{ padding: 20 }}>
+                  No orders confirmed this month.
                 </td>
               </tr>
             )}

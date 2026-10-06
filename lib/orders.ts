@@ -397,3 +397,35 @@ export async function updateOrderCourier(orderId: string, courier: string) {
     throw error;
   }
 }
+
+// Share link: a random token anyone with the link can use to view one
+// order, read-only, no login needed — for sending to a merchandiser.
+export async function getOrCreateShareToken(orderId: string): Promise<string> {
+  const { data: existing } = await supabaseAdmin
+    .from('orders')
+    .select('share_token')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (existing?.share_token) return existing.share_token;
+
+  const token = crypto.randomUUID().replace(/-/g, '');
+  const { error } = await supabaseAdmin
+    .from('orders')
+    .update({ share_token: token })
+    .eq('id', orderId);
+  if (error) {
+    console.error('Failed to create share token:', error);
+    throw error;
+  }
+  return token;
+}
+
+export async function getOrderIdByShareToken(token: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('orders')
+    .select('id')
+    .eq('share_token', token)
+    .maybeSingle();
+  return data?.id ?? null;
+}

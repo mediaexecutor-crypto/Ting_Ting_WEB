@@ -8,6 +8,7 @@ import OrderEditForm from '@/components/OrderEditForm';
 import OrderFileUpload from '@/components/OrderFileUpload';
 import OrderFilesList from '@/components/OrderFilesList';
 import DeleteOrderButton from '@/components/DeleteOrderButton';
+import ShareLinkButton from '@/components/ShareLinkButton';
 import OdooContactButton from '@/components/OdooContactButton';
 import { getOdooContactUrl } from '@/lib/odoo';
 
@@ -53,6 +54,7 @@ export default async function OrderDetailPage({ params }: Props) {
           <Link className="btn secondary" href="/orders">
             ← Back to Orders
           </Link>
+          <ShareLinkButton orderId={id} />
           <DeleteOrderButton orderId={id} invoice={order!.invoice} />
         </div>
       </div>

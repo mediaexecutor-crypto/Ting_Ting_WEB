@@ -43,9 +43,57 @@ export default function OdooContactButton({
     );
   }
 
+  const [pasting, setPasting] = useState(false);
+  const [linkInput, setLinkInput] = useState('');
+
+  async function handleSaveLink() {
+    if (!linkInput.trim()) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/odoo-contact/save-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: linkInput.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error ?? 'Failed to save link.');
+        return;
+      }
+      setUrl(linkInput.trim());
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (pasting) {
+    return (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          placeholder="Paste existing Odoo contact link"
+          value={linkInput}
+          onChange={(e) => setLinkInput(e.target.value)}
+          style={{ border: '1px solid #d8dde5', borderRadius: 7, padding: 7, width: 220 }}
+        />
+        <button className="btn" onClick={handleSaveLink} disabled={busy}>
+          Save
+        </button>
+        <button className="btn secondary" onClick={() => setPasting(false)} disabled={busy}>
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <button className="btn secondary" onClick={handleCreate} disabled={busy}>
-      {busy ? 'Creating...' : 'Create Odoo Contact'}
-    </button>
+    <div style={{ display: 'flex', gap: 6 }}>
+      <button className="btn secondary" onClick={handleCreate} disabled={busy}>
+        {busy ? 'Creating...' : 'Create Odoo Contact'}
+      </button>
+      <button className="btn secondary" onClick={() => setPasting(true)} disabled={busy}>
+        Have a link?
+      </button>
+    </div>
   );
 }
