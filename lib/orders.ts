@@ -20,6 +20,7 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
       status,
       priority,
       courier,
+      order_type,
       salesperson_id,
       confirmed_date,
       order_items ( quantity ),
@@ -60,6 +61,7 @@ export async function getOrders(salespersonId?: string): Promise<Order[]> {
     priority: order.priority ?? 'Normal',
     deliveryChargeSet: order.delivery_charge !== null,
     courier: order.courier ?? '',
+    orderType: order.order_type ?? '',
     salespersonId: order.salesperson_id ?? null,
     confirmedDate: order.confirmed_date ?? '',
     totalQty: (order.order_items ?? []).reduce(

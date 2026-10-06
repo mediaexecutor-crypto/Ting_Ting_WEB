@@ -7,16 +7,21 @@ import { shiftMonth, monthLabel, currentMonthStr } from '@/lib/calendar';
 export const dynamic = 'force-dynamic';
 
 type Props = {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; type?: string }>;
 };
 
 export default async function ReportsPage({ searchParams }: Props) {
-  const { month } = await searchParams;
+  const { month, type } = await searchParams;
   const monthStr = month && /^\d{4}-\d{2}$/.test(month) ? month : currentMonthStr();
+  const orderType = type === 'Organic Customer' || type === 'Ad Customer' ? type : '';
 
   const ctx = await getCurrentUserContext();
-  const orders = await getOrders(scopeFilter(ctx));
+  const allOrders = await getOrders(scopeFilter(ctx));
+  const orders = orderType ? allOrders.filter((o) => o.orderType === orderType) : allOrders;
   const stats = computeReportStats(orders, monthStr);
+  const monthOrders = orders
+    .filter((o) => o.confirmedDate.slice(0, 7) === monthStr && o.status !== 'CANCELLED')
+    .sort((a, b) => a.confirmedDate.localeCompare(b.confirmedDate));
 
   const last6 = stats.months.slice(-6);
   const maxMonthly = Math.max(1, ...last6.map((m) => m.revenue));
@@ -41,6 +46,17 @@ export default async function ReportsPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
+
+      <form method="get" style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input type="hidden" name="month" value={monthStr} />
+        <label className="muted" style={{ fontSize: 13 }}>Order Type:</label>
+        <select name="type" defaultValue={orderType}>
+          <option value="">All</option>
+          <option>Organic Customer</option>
+          <option>Ad Customer</option>
+        </select>
+        <button className="btn secondary" type="submit">Filter</button>
+      </form>
 
       <div className="cards">
         <div className="card">
@@ -178,6 +194,44 @@ export default async function ReportsPage({ searchParams }: Props) {
               <tr>
                 <td colSpan={4} className="muted" style={{ padding: 20 }}>
                   No orders confirmed this month.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="panel" style={{ marginTop: 18 }}>
+        <h3>
+          Orders — {monthLabel(monthStr)}
+          {orderType ? ` · ${orderType}` : ''}
+        </h3>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Order Type</th>
+              <th>Confirmed</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {monthOrders.map((o) => (
+              <tr key={o.id}>
+                <td>{o.invoice || 'No Invoice'}</td>
+                <td>{o.customer}</td>
+                <td>{o.phone}</td>
+                <td>{o.orderType || '—'}</td>
+                <td>{o.confirmedDate}</td>
+                <td>৳{o.amount.toLocaleString()}</td>
+              </tr>
+            ))}
+            {monthOrders.length === 0 && (
+              <tr>
+                <td colSpan={6} className="muted" style={{ padding: 20 }}>
+                  No orders confirmed this month{orderType ? ` for ${orderType}` : ''}.
                 </td>
               </tr>
             )}

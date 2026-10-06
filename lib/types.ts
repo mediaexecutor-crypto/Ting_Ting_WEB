@@ -41,6 +41,7 @@ export type Order = {
   confirmedDate: string;
   totalQty: number;
   courier: string;
+  orderType: string;
   createdAt: string;
 };
 
