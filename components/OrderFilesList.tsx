@@ -42,9 +42,9 @@ export default function OrderFilesList({
             borderBottom: '1px solid #edf0f3',
           }}
         >
-          {f.thumbnailUrl ? (
+          {f.imageUrl ? (
             <img
-              src={f.thumbnailUrl}
+              src={f.imageUrl}
               alt=""
               width={36}
               height={36}

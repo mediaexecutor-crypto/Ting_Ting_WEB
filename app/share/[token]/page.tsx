@@ -28,6 +28,9 @@ export default async function SharedOrderPage({ params }: Props) {
         {/* Top: name, Odoo link, alternative number */}
         <div style={{ borderBottom: '1px solid #edf0f3', paddingBottom: 16, marginBottom: 20 }}>
           <div style={{ fontSize: 22, fontWeight: 800 }}>{order.customer || '—'}</div>
+          <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+            {[order.phone, order.address].filter(Boolean).join(' · ') || '—'}
+          </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 6, fontSize: 14 }}>
             {odooUrl && (
               <a href={odooUrl} target="_blank" rel="noreferrer" style={{ color: '#1d4ed8', fontWeight: 700 }}>
@@ -50,14 +53,6 @@ export default async function SharedOrderPage({ params }: Props) {
 
             <table className="table">
               <tbody>
-                <tr>
-                  <td className="muted">Phone</td>
-                  <td>{order.phone || '—'}</td>
-                </tr>
-                <tr>
-                  <td className="muted">Address</td>
-                  <td>{order.address || '—'}</td>
-                </tr>
                 <tr>
                   <td className="muted">Delivery Date</td>
                   <td>{order.delivery ? formatDate(order.delivery) : '—'}</td>
@@ -114,12 +109,14 @@ export default async function SharedOrderPage({ params }: Props) {
             {files.length === 0 && <div className="muted">No files uploaded.</div>}
             {files.map((f) => (
               <div key={f.id} style={{ marginBottom: 16 }}>
-                {f.thumbnailUrl ? (
-                  <img
-                    src={f.thumbnailUrl}
-                    alt={f.fileName}
-                    style={{ width: '100%', maxWidth: 220, borderRadius: 8, display: 'block' }}
-                  />
+                {f.imageUrl ? (
+                  <a href={f.imageUrl} target="_blank" rel="noreferrer">
+                    <img
+                      src={f.imageUrl}
+                      alt={f.fileName}
+                      style={{ width: '100%', maxWidth: 260, borderRadius: 8, display: 'block' }}
+                    />
+                  </a>
                 ) : (
                   <div
                     style={{

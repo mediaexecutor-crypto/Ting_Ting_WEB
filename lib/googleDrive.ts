@@ -228,3 +228,20 @@ export async function getDriveFileMeta(accessToken: string, fileId: string) {
     parents?: string[];
   }>;
 }
+
+// Makes a file publicly viewable via its direct link (anyone with the
+// link can read, no Google sign-in needed) — used so thumbnails/images
+// actually render on the public share page and in the order file list.
+export async function makeFilePublic(accessToken: string, fileId: string) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+  });
+  if (!res.ok) {
+    console.error('Failed to make file public:', await res.text());
+  }
+}

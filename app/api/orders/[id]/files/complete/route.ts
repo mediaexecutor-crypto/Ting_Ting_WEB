@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getOrderFolder } from '@/lib/orderFolders';
 import { getValidAccessToken } from '@/lib/googleAccount';
-import { getDriveFileMeta } from '@/lib/googleDrive';
+import { getDriveFileMeta, makeFilePublic } from '@/lib/googleDrive';
 import { addOrderFile } from '@/lib/orderFiles';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getCurrentUserContext } from '@/lib/auth';
@@ -45,6 +45,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (!meta.parents?.includes(folder.driveFolderId)) {
       return NextResponse.json({ error: 'File is not in this order\'s folder.' }, { status: 400 });
+    }
+
+    // Best-effort — never fails the upload itself.
+    try {
+      await makeFilePublic(accessToken, meta.id);
+    } catch (err) {
+      console.error('Failed to make file public:', err);
     }
 
     await addOrderFile({

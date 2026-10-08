@@ -7,6 +7,7 @@ export type OrderFile = {
   fileName: string;
   fileUrl: string;
   thumbnailUrl: string;
+  imageUrl: string;
   note: string;
   createdAt: string;
 };
@@ -14,7 +15,7 @@ export type OrderFile = {
 export async function getOrderFiles(orderId: string): Promise<OrderFile[]> {
   const { data, error } = await supabaseAdmin
     .from('order_files')
-    .select('id, file_name, file_url, thumbnail_url, note, created_at')
+    .select('id, file_name, file_url, thumbnail_url, drive_file_id, note, created_at')
     .eq('order_id', orderId)
     .order('created_at', { ascending: false });
 
@@ -28,6 +29,7 @@ export async function getOrderFiles(orderId: string): Promise<OrderFile[]> {
     fileName: f.file_name,
     fileUrl: f.file_url ?? '',
     thumbnailUrl: f.thumbnail_url ?? '',
+    imageUrl: f.thumbnail_url ? `https://drive.google.com/uc?export=view&id=${f.drive_file_id}` : '',
     note: f.note ?? '',
     createdAt: f.created_at,
   }));
