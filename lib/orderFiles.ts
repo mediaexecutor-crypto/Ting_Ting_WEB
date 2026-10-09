@@ -7,7 +7,7 @@ export type OrderFile = {
   fileName: string;
   fileUrl: string;
   thumbnailUrl: string;
-  imageUrl: string;
+  imageSources: string[];
   note: string;
   createdAt: string;
 };
@@ -29,7 +29,13 @@ export async function getOrderFiles(orderId: string): Promise<OrderFile[]> {
     fileName: f.file_name,
     fileUrl: f.file_url ?? '',
     thumbnailUrl: f.thumbnail_url ?? '',
-    imageUrl: f.thumbnail_url ? `https://drive.google.com/uc?export=view&id=${f.drive_file_id}` : '',
+    imageSources: f.drive_file_id
+      ? [
+          `https://drive.google.com/thumbnail?id=${f.drive_file_id}&sz=w1000`,
+          `https://drive.google.com/uc?export=view&id=${f.drive_file_id}`,
+          f.thumbnail_url ?? '',
+        ]
+      : [f.thumbnail_url ?? ''],
     note: f.note ?? '',
     createdAt: f.created_at,
   }));

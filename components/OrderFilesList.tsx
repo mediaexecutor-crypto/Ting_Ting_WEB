@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderFile } from '@/lib/orderFiles';
+import DriveImage from './DriveImage';
 
 export default function OrderFilesList({
   orderId,
@@ -42,31 +43,9 @@ export default function OrderFilesList({
             borderBottom: '1px solid #edf0f3',
           }}
         >
-          {f.imageUrl ? (
-            <img
-              src={f.imageUrl}
-              alt=""
-              width={36}
-              height={36}
-              style={{ borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 6,
-                background: '#eef1f5',
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 16,
-              }}
-            >
-              📄
-            </div>
-          )}
+          <div style={{ flexShrink: 0 }}>
+            <DriveImage sources={f.imageSources} alt={f.fileName} size={36} />
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <a
               href={f.fileUrl}

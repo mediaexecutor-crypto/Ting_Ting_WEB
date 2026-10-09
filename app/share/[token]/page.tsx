@@ -4,6 +4,7 @@ import { getOrderFiles } from '@/lib/orderFiles';
 import { getOdooContactUrl } from '@/lib/odoo';
 import { formatDate } from '@/lib/date';
 import { statusClassName } from '@/lib/statusColors';
+import DriveImage from '@/components/DriveImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,31 +110,9 @@ export default async function SharedOrderPage({ params }: Props) {
             {files.length === 0 && <div className="muted">No files uploaded.</div>}
             {files.map((f) => (
               <div key={f.id} style={{ marginBottom: 16 }}>
-                {f.imageUrl ? (
-                  <a href={f.imageUrl} target="_blank" rel="noreferrer">
-                    <img
-                      src={f.imageUrl}
-                      alt={f.fileName}
-                      style={{ width: '100%', maxWidth: 260, borderRadius: 8, display: 'block' }}
-                    />
-                  </a>
-                ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      maxWidth: 220,
-                      height: 120,
-                      background: '#eef1f5',
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 32,
-                    }}
-                  >
-                    📄
-                  </div>
-                )}
+                <a href={f.imageSources[0] ? f.imageSources[0].replace('sz=w1000', 'sz=w2000') : f.fileUrl} target="_blank" rel="noreferrer">
+                  <DriveImage sources={f.imageSources} alt={f.fileName} size={260} />
+                </a>
                 <div style={{ fontSize: 13, marginTop: 4, fontWeight: 600 }}>{f.fileName}</div>
                 <a href={f.fileUrl} target="_blank" rel="noreferrer" className="btn secondary" style={{ marginTop: 4, display: 'inline-block' }}>
                   Download
