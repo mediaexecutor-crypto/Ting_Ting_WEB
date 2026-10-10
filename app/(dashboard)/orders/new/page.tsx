@@ -1,9 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewOrderItem } from '@/lib/types';
 import FileDropzone, { PendingFile } from '@/components/FileDropzone';
 import { uploadFileToOrder } from '@/lib/clientUpload';
+
+const DRAFT_KEY = 'cods-oms:new-order-draft';
 
 const PRODUCT_NAMES = ['RNSS', 'RNLS', 'VNSS', 'VNLS', 'Polo-SS', 'PoloLS', 'Shorts'];
 
@@ -41,6 +43,10 @@ export default function NewOrder() {
   const [productNotes, setProductNotes] = useState(DEFAULT_PRODUCT_NOTES);
   const [files, setFiles] = useState<PendingFile[]>([]);
 
+  const [draftReady, setDraftReady] = useState(false);
+  const draftChecked = useRef(false);
+  const finished = useRef(false); // order created or cancelled: stop saving drafts
+
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
@@ -54,7 +60,95 @@ export default function NewOrder() {
     if (qName) setCustomerName(qName);
     if (qPhone) setPhone(qPhone);
     if (qAddress) setAddress(qAddress);
+
+    if (draftChecked.current) return;
+    draftChecked.current = true;
+
+    // Coming from a customer's "+ New Order" link is a deliberate fresh start.
+    if (!qName && !qPhone && !qAddress) {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          const ok = window.confirm(
+            'আগের একটা অসম্পূর্ণ order draft পাওয়া গেছে।\n\nসেখান থেকে চালিয়ে যেতে চান?\n\nOK = আগের ডাটা ফিরিয়ে আনুন\nCancel = নতুন করে শুরু করুন'
+          );
+          if (ok) {
+            setCustomerName(d.customerName ?? '');
+            setPhone(d.phone ?? '');
+            setAlternativeNumber(d.alternativeNumber ?? '');
+            setAddress(d.address ?? '');
+            setInvoice(d.invoice ?? '');
+            setDeliveryDate(d.deliveryDate ?? '');
+            setConfirmedDate(d.confirmedDate || todayStr());
+            setOrderType(d.orderType ?? 'Ad Customer');
+            setSource(d.source ?? 'WhatsApp');
+            setPriority(d.priority ?? 'Normal');
+            if (Array.isArray(d.items) && d.items.length > 0) setItems(d.items);
+            setDeliveryCharge(d.deliveryCharge ?? null);
+            setCourier(d.courier ?? '');
+            setAdvance(d.advance ?? 0);
+            setProductNotes(d.productNotes ?? DEFAULT_PRODUCT_NOTES);
+          } else {
+            localStorage.removeItem(DRAFT_KEY);
+          }
+        }
+      } catch {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    }
+    setDraftReady(true);
   }, []);
+
+  // Save what's typed so far (text fields only — files can't be kept).
+  // Only saved once there's something real beyond the pre-filled defaults.
+  useEffect(() => {
+    if (!draftReady) return;
+    const hasContent =
+      customerName.trim() ||
+      phone.trim() ||
+      alternativeNumber.trim() ||
+      address.trim() ||
+      invoice.trim() ||
+      deliveryDate ||
+      courier ||
+      deliveryCharge !== null ||
+      advance ||
+      items.some((i) => i.product.trim() || i.qty || i.price) ||
+      productNotes !== DEFAULT_PRODUCT_NOTES;
+
+    const t = setTimeout(() => {
+      if (finished.current) return;
+      try {
+        if (hasContent) {
+          localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({
+              customerName, phone, alternativeNumber, address, invoice, deliveryDate,
+              confirmedDate, orderType, source, priority, items, deliveryCharge,
+              courier, advance, productNotes,
+            })
+          );
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+        }
+      } catch {
+        // storage unavailable — draft just won't be kept
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [
+    draftReady, customerName, phone, alternativeNumber, address, invoice, deliveryDate,
+    confirmedDate, orderType, source, priority, items, deliveryCharge, courier, advance,
+    productNotes,
+  ]);
+
+  function clearDraft() {
+    finished.current = true;
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+  }
 
   // Typing a phone number that already belongs to a saved customer
   // auto-fills their name and address.
@@ -124,6 +218,7 @@ export default function NewOrder() {
       }
 
       const orderId: string = data.id;
+      clearDraft();
 
       // The order (and its Drive folder) now exist — upload any selected
       // files straight into that folder, one at a time.
@@ -218,7 +313,7 @@ export default function NewOrder() {
           <div className="field">
             <label>Invoice Number (max 6 characters, optional)</label>
             <input
-              placeholder="Optional"
+              placeholder="Blank = auto serial"
               maxLength={6}
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
@@ -399,7 +494,7 @@ export default function NewOrder() {
         <FileDropzone items={files} onChange={setFiles} disabled={submitting} />
 
         <div className="actions">
-          <button className="btn secondary" onClick={() => router.push('/orders')} disabled={submitting}>
+          <button className="btn secondary" onClick={() => { clearDraft(); router.push('/orders'); }} disabled={submitting}>
             Cancel
           </button>
           <button className="btn" onClick={handleSubmit} disabled={submitting}>

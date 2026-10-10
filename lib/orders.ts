@@ -209,6 +209,33 @@ export type UpdateOrderPayload = {
   notes: string;
 };
 
+// Next invoice number in sequence: highest all-digit invoice (max 6 digits)
+// + 1. Falls back to the smallest unused number if the sequence would pass
+// 999999 (the 6-character limit). No DB sequence/migration needed — a rare
+// clash from two simultaneous creates is retried by the caller.
+async function generateNextInvoice(): Promise<string> {
+  const used = new Set<number>();
+  const pageSize = 1000;
+  for (let from = 0; from < 200000; from += pageSize) {
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .select('invoice')
+      .not('invoice', 'is', null)
+      .order('id')
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      if (/^\d{1,6}$/.test(row.invoice)) used.add(Number(row.invoice));
+    }
+    if (!data || data.length < pageSize) break;
+  }
+  const max = used.size ? Math.max(...used) : 0;
+  if (max < 999999) return String(max + 1);
+  let n = 1;
+  while (used.has(n)) n++;
+  return String(n);
+}
+
 export async function updateOrder(orderId: string, customerId: string, payload: UpdateOrderPayload) {
   const { error: customerError } = await supabaseAdmin
     .from('customers')
@@ -228,12 +255,25 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
   const deliveryCharge = payload.deliveryCharge; // keep null distinct from 0
   const advance = payload.advance || 0;
   const dueAmount = itemsTotal + (deliveryCharge ?? 0) - advance;
-  const invoice = payload.invoice.trim().slice(0, 6) || null;
+  // Blank invoice never blanks out an existing number; an order that has
+  // none yet (older orders) gets the next serial number.
+  const typedInvoice = payload.invoice.trim().slice(0, 6);
+  let invoiceUpdate: { invoice?: string } = {};
+  if (typedInvoice) {
+    invoiceUpdate = { invoice: typedInvoice };
+  } else {
+    const { data: current } = await supabaseAdmin
+      .from('orders')
+      .select('invoice')
+      .eq('id', orderId)
+      .maybeSingle();
+    if (!current?.invoice) invoiceUpdate = { invoice: await generateNextInvoice() };
+  }
 
   const { error: orderError } = await supabaseAdmin
     .from('orders')
     .update({
-      invoice,
+      ...invoiceUpdate,
       delivery_date: payload.deliveryDate || null,
       confirmed_date: payload.confirmedDate || null,
       alternative_number: payload.alternativeNumber?.trim() || null,
@@ -319,41 +359,48 @@ export async function createOrder(payload: NewOrderPayload, salespersonId: strin
   const advance = payload.advance || 0;
   const dueAmount = itemsTotal + (deliveryCharge ?? 0) - advance;
 
-  // Invoice is optional and capped at 6 characters. Left blank, it's
-  // stored as NULL (not an empty string or an auto-generated value) so
-  // multiple no-invoice orders don't collide with the unique constraint
-  // — Postgres allows any number of NULLs in a unique column.
-  const trimmedInvoice = payload.invoice.trim().slice(0, 6);
-  const invoice = trimmedInvoice || null;
+  // Invoice is optional (max 6 characters). Left blank, the next serial
+  // number is assigned automatically; it can be edited later.
+  const typedInvoice = payload.invoice.trim().slice(0, 6);
 
-  const { data: order, error: orderError } = await supabaseAdmin
-    .from('orders')
-    .insert({
-      invoice,
-      customer_id: customerId,
-      delivery_date: payload.deliveryDate || null,
-      confirmed_date: payload.confirmedDate || null,
-      alternative_number: payload.alternativeNumber?.trim() || null,
-      order_type: payload.orderType || null,
-      source: payload.source,
-      priority: payload.priority,
-      status: 'NEW',
-      total_amount: itemsTotal,
-      delivery_charge: deliveryCharge,
-      advance,
-      due_amount: dueAmount,
-      product_notes: payload.productNotes,
-      notes: payload.notes,
-      courier: payload.courier,
-      salesperson_id: salespersonId,
-    })
-    .select('id')
-    .single();
+  let inserted: { id: string } | null = null;
+  for (let attempt = 0; attempt < 5 && !inserted; attempt++) {
+    const invoice = typedInvoice || (await generateNextInvoice());
+    const { data, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .insert({
+        invoice,
+        customer_id: customerId,
+        delivery_date: payload.deliveryDate || null,
+        confirmed_date: payload.confirmedDate || null,
+        alternative_number: payload.alternativeNumber?.trim() || null,
+        order_type: payload.orderType || null,
+        source: payload.source,
+        priority: payload.priority,
+        status: 'NEW',
+        total_amount: itemsTotal,
+        delivery_charge: deliveryCharge,
+        advance,
+        due_amount: dueAmount,
+        product_notes: payload.productNotes,
+        notes: payload.notes,
+        courier: payload.courier,
+        salesperson_id: salespersonId,
+      })
+      .select('id')
+      .single();
 
-  if (orderError) {
+    if (!orderError) {
+      inserted = data;
+      break;
+    }
+    // Another order just took the same auto number — try the next one.
+    if (!typedInvoice && orderError.code === '23505') continue;
     console.error('Failed to create order:', orderError);
     throw orderError;
   }
+  if (!inserted) throw new Error('Could not assign an invoice number. Please try again.');
+  const order = inserted;
 
   const items = payload.items
     .filter((item) => item.product.trim() !== '')
