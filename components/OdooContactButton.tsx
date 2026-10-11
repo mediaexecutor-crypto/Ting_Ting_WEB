@@ -12,6 +12,8 @@ export default function OdooContactButton({
   const router = useRouter();
   const [url, setUrl] = useState(initialUrl);
   const [busy, setBusy] = useState(false);
+  const [pasting, setPasting] = useState(false);
+  const [linkInput, setLinkInput] = useState('');
 
   async function handleCreate() {
     setBusy(true);
@@ -43,8 +45,6 @@ export default function OdooContactButton({
     );
   }
 
-  const [pasting, setPasting] = useState(false);
-  const [linkInput, setLinkInput] = useState('');
 
   async function handleSaveLink() {
     if (!linkInput.trim()) return;
