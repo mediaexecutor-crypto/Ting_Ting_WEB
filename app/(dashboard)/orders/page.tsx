@@ -30,12 +30,22 @@ export default async function Orders({ searchParams }: Props) {
   });
 
 
-orders.sort((a, b) => {
-  const aDelivered = a.status === 'DELIVERED';
-  const bDelivered = b.status === 'DELIVERED';
+// Three groups, top to bottom: everything still in progress, then orders
+// that are READY / out for DELIVERY, then DELIVERED at the bottom.
+// Middle group: later delivery date higher up (earliest delivery sits at the
+// bottom of the group, no date = top); same date -> newest created higher.
+const stageRank = (s: string) =>
+  s === 'DELIVERED' ? 2 : s === 'READY' || s === 'DELIVERY' ? 1 : 0;
 
-  if (aDelivered !== bDelivered) {
-    return aDelivered ? 1 : -1;
+orders.sort((a, b) => {
+  const ra = stageRank(a.status);
+  const rb = stageRank(b.status);
+  if (ra !== rb) return ra - rb;
+
+  if (ra === 1) {
+    const da = a.delivery || '9999-12-31';
+    const db = b.delivery || '9999-12-31';
+    if (da !== db) return db.localeCompare(da);
   }
 
   return b.createdAt.localeCompare(a.createdAt);

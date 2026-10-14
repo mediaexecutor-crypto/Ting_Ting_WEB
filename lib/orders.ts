@@ -83,12 +83,59 @@ export async function getPendingDeliveries(salespersonId?: string): Promise<Orde
 // The Deliveries page specifically: only orders that have actually
 // reached the delivery stage (READY/DELIVERY/DELIVERED) — a product
 // still being designed or produced shouldn't show up here.
+const DELIVERY_STAGES: OrderStatus[] = ['READY', 'DELIVERY', 'DELIVERED'];
+
+// Records a status change in order_status_history (an existing table), so
+// we know WHEN an order became ready. Never blocks the change itself.
+async function logStatusChange(
+  orderId: string,
+  from: string | null,
+  to: string,
+  userId: string | null
+) {
+  if (from === to) return;
+  const { error } = await supabaseAdmin
+    .from('order_status_history')
+    .insert({ order_id: orderId, from_status: from, to_status: to, changed_by: userId });
+  if (error) console.error('Failed to log status change:', error);
+}
+
+// Deliveries page: only READY/DELIVERY/DELIVERED orders, the most recently
+// readied on top. "Ready time" = the latest time the order ENTERED those
+// stages (from the status history); orders readied before history was
+// recorded fall back to their creation time.
 export async function getDeliveryQueue(salespersonId?: string): Promise<Order[]> {
   const orders = await getOrders(salespersonId);
-  const relevant: OrderStatus[] = ['READY', 'DELIVERY', 'DELIVERED'];
-  return orders
-    .filter((o) => relevant.includes(o.status))
-    .sort((a, b) => (a.delivery || '9999').localeCompare(b.delivery || '9999'));
+  const rows = orders.filter((o) => DELIVERY_STAGES.includes(o.status));
+  if (rows.length === 0) return rows;
+
+  const ids = new Set(rows.map((o) => o.id));
+  const readyAt = new Map<string, string>();
+  try {
+    const pageSize = 1000;
+    for (let from = 0; from < 100000; from += pageSize) {
+      const { data, error } = await supabaseAdmin
+        .from('order_status_history')
+        .select('order_id, from_status, to_status, changed_at')
+        .in('to_status', DELIVERY_STAGES)
+        .order('changed_at')
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      for (const h of data ?? []) {
+        if (!ids.has(h.order_id)) continue;
+        // moving READY -> DELIVERY -> DELIVERED isn't "becoming ready" again
+        if (h.from_status && DELIVERY_STAGES.includes(h.from_status as OrderStatus)) continue;
+        readyAt.set(h.order_id, h.changed_at); // ascending, so the last one wins
+      }
+      if (!data || data.length < pageSize) break;
+    }
+  } catch (err) {
+    console.error('Could not read status history, using creation order:', err);
+  }
+
+  return rows.sort((a, b) =>
+    (readyAt.get(b.id) ?? b.createdAt).localeCompare(readyAt.get(a.id) ?? a.createdAt)
+  );
 }
 
 export type OrderDetail = Order & {
@@ -236,7 +283,18 @@ async function generateNextInvoice(): Promise<string> {
   return String(n);
 }
 
-export async function updateOrder(orderId: string, customerId: string, payload: UpdateOrderPayload) {
+export async function updateOrder(
+  orderId: string,
+  customerId: string,
+  payload: UpdateOrderPayload,
+  userId: string | null = null
+) {
+  const { data: before } = await supabaseAdmin
+    .from('orders')
+    .select('status')
+    .eq('id', orderId)
+    .maybeSingle();
+
   const { error: customerError } = await supabaseAdmin
     .from('customers')
     .update({
@@ -295,6 +353,7 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
     console.error('Failed to update order:', orderError);
     throw orderError;
   }
+  await logStatusChange(orderId, before?.status ?? null, payload.status, userId);
 
   // Simplest correct way to handle add/remove/edit of line items together:
   // replace the whole set rather than diffing.
@@ -329,12 +388,23 @@ export async function updateOrder(orderId: string, customerId: string, payload: 
 // Lightweight status-only update — used for quick status changes from
 // the Orders list or order page without opening the full edit form (and
 // without risk of clobbering other fields, unlike updateOrder()).
-export async function updateOrderStatus(orderId: string, status: OrderStatus) {
+export async function updateOrderStatus(
+  orderId: string,
+  status: OrderStatus,
+  userId: string | null = null
+) {
+  const { data: before } = await supabaseAdmin
+    .from('orders')
+    .select('status')
+    .eq('id', orderId)
+    .maybeSingle();
+
   const { error } = await supabaseAdmin.from('orders').update({ status }).eq('id', orderId);
   if (error) {
     console.error('Failed to update order status:', error);
     throw error;
   }
+  await logStatusChange(orderId, before?.status ?? null, status, userId);
 }
 
 // Cascades (order_items, order_files, google_drive_folders, etc.) are

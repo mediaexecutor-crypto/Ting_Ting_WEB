@@ -50,7 +50,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   try {
-    await updateOrder(orderId, order.customer_id, body);
+    await updateOrder(orderId, order.customer_id, body, ctx?.id ?? null);
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     if (error?.code === '23505') {

@@ -23,7 +23,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   try {
-    await updateOrderStatus(orderId, status);
+    await updateOrderStatus(orderId, status, ctx?.id ?? null);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Status update failed:', error);
