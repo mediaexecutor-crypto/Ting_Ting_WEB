@@ -114,7 +114,7 @@ export default async function SharedOrderPage({ params }: Props) {
                   <DriveImage sources={f.imageSources} alt={f.fileName} size={260} />
                 </a>
                 <div style={{ fontSize: 13, marginTop: 4, fontWeight: 600 }}>{f.fileName}</div>
-                <a href={f.fileUrl} target="_blank" rel="noreferrer" className="btn secondary" style={{ marginTop: 4, display: 'inline-block' }}>
+                <a href={f.downloadUrl} download={f.fileName} className="btn secondary" style={{ marginTop: 4, display: 'inline-block' }}>
                   Download
                 </a>
               </div>

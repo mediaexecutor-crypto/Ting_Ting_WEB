@@ -8,6 +8,7 @@ export type OrderFile = {
   fileUrl: string;
   thumbnailUrl: string;
   imageSources: string[];
+  downloadUrl: string;
   note: string;
   createdAt: string;
 };
@@ -29,6 +30,11 @@ export async function getOrderFiles(orderId: string): Promise<OrderFile[]> {
     fileName: f.file_name,
     fileUrl: f.file_url ?? '',
     thumbnailUrl: f.thumbnail_url ?? '',
+    // Google answers this with an attachment, so the browser saves the file
+    // straight away instead of opening Drive's preview page.
+    downloadUrl: f.drive_file_id
+      ? `https://drive.google.com/uc?export=download&id=${f.drive_file_id}`
+      : (f.file_url ?? ''),
     imageSources: f.drive_file_id
       ? [
           `https://drive.google.com/thumbnail?id=${f.drive_file_id}&sz=w1000`,
